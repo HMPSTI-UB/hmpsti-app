@@ -4,6 +4,7 @@ import { db } from "@/db"
 import { vote_sessions, iot_teams, votes } from "@/db/schema"
 import { eq, sql, and, lt, gt, or, ne, countDistinct } from "drizzle-orm"
 import { auth } from "@/auth"
+import { revalidatePath } from "next/cache"
 
 // Helper to check if any session is active now or will overlap with given times
 async function checkOverlap(startTime: Date, endTime: Date, excludeId?: number) {
@@ -75,6 +76,9 @@ export async function createSession(data: { name: string, startTime: Date, endTi
     startTime: data.startTime,
     endTime: data.endTime,
   });
+  
+  revalidatePath("/dashboard/vote-sessions");
+  revalidatePath("/pameran-iot/vote", "page");
 }
 
 export async function updateSession(id: number, data: { name: string, startTime: Date, endTime: Date }) {
@@ -93,6 +97,9 @@ export async function updateSession(id: number, data: { name: string, startTime:
       endTime: data.endTime,
     })
     .where(eq(vote_sessions.id, id));
+
+  revalidatePath("/dashboard/vote-sessions");
+  revalidatePath("/pameran-iot/vote", "page");
 }
 
 export async function deleteSession(id: number) {
@@ -106,6 +113,9 @@ export async function deleteSession(id: number) {
   }
 
   await db.delete(vote_sessions).where(eq(vote_sessions.id, id));
+
+  revalidatePath("/dashboard/vote-sessions");
+  revalidatePath("/pameran-iot/vote", "page");
 }
 
 export async function startSessionNow(id: number) {
@@ -150,6 +160,9 @@ export async function startSessionNow(id: number) {
   await db.update(vote_sessions)
     .set({ startTime: now, endTime: newEndTime })
     .where(eq(vote_sessions.id, id));
+
+  revalidatePath("/dashboard/vote-sessions");
+  revalidatePath("/pameran-iot/vote", "page");
 }
 
 export async function endSessionNow(id: number) {
@@ -160,6 +173,9 @@ export async function endSessionNow(id: number) {
   await db.update(vote_sessions)
     .set({ endTime: now })
     .where(eq(vote_sessions.id, id));
+
+  revalidatePath("/dashboard/vote-sessions");
+  revalidatePath("/pameran-iot/vote", "page");
 }
 
 export async function resetSessionVotes(id: number) {
@@ -167,4 +183,8 @@ export async function resetSessionVotes(id: number) {
   if (!session?.user) throw new Error("Unauthorized");
 
   await db.delete(votes).where(eq(votes.sessionId, id));
+
+  revalidatePath("/dashboard/vote-sessions");
+  revalidatePath("/dashboard/vote-monitor");
+  revalidatePath("/pameran-iot/vote", "page");
 }

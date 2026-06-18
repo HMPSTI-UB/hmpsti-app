@@ -4,6 +4,7 @@ import { db } from "@/db"
 import { iot_teams, vote_sessions, votes } from "@/db/schema"
 import { eq, sql, desc } from "drizzle-orm"
 import { auth } from "@/auth"
+import { revalidatePath } from "next/cache"
 
 export async function getVoteRankings(sessionId?: number) {
   let query = db
@@ -52,4 +53,8 @@ export async function deleteVote(voteId: number) {
   if (!session?.user) throw new Error("Unauthorized");
 
   await db.delete(votes).where(eq(votes.id, voteId));
+
+  revalidatePath("/dashboard/vote-monitor");
+  revalidatePath("/dashboard/vote-sessions");
+  revalidatePath("/pameran-iot/vote", "page");
 }

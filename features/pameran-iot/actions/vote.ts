@@ -3,6 +3,7 @@
 import { db } from "@/db"
 import { vote_sessions, votes } from "@/db/schema"
 import { eq } from "drizzle-orm"
+import { revalidatePath } from "next/cache"
 
 export async function submitVote(teamId: number, sessionId: number, voterName: string | undefined, message: string | undefined) {
   try {
@@ -30,6 +31,10 @@ export async function submitVote(teamId: number, sessionId: number, voterName: s
       voterName: voterName || null,
       message: message || null,
     });
+    
+    revalidatePath("/dashboard/vote-monitor");
+    revalidatePath("/dashboard/vote-sessions");
+    
     return { success: true };
   } catch (error) {
     console.error("Failed to submit vote:", error);

@@ -4,6 +4,7 @@ import { db } from "@/db"
 import { iot_teams, vote_sessions, votes } from "@/db/schema"
 import { eq, sql } from "drizzle-orm"
 import { auth } from "@/auth"
+import { revalidatePath } from "next/cache"
 
 export async function getAdminTeams() {
   const result = await db
@@ -45,6 +46,9 @@ export async function createTeam(data: TeamFormData) {
   await db.insert(iot_teams).values({
     ...data,
   });
+
+  revalidatePath("/dashboard/iot-teams");
+  revalidatePath("/pameran-iot/vote", "page");
 }
 
 export async function updateTeam(id: number, data: TeamFormData) {
@@ -56,6 +60,9 @@ export async function updateTeam(id: number, data: TeamFormData) {
       ...data,
     })
     .where(eq(iot_teams.id, id));
+
+  revalidatePath("/dashboard/iot-teams");
+  revalidatePath("/pameran-iot/vote", "page");
 }
 
 export async function deleteTeam(id: number) {
@@ -66,4 +73,7 @@ export async function deleteTeam(id: number) {
   await db.delete(votes).where(eq(votes.teamId, id));
   // Then delete the team
   await db.delete(iot_teams).where(eq(iot_teams.id, id));
+
+  revalidatePath("/dashboard/iot-teams");
+  revalidatePath("/pameran-iot/vote", "page");
 }
