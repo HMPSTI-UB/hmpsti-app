@@ -77,8 +77,7 @@ export async function createSession(data: { name: string, startTime: Date, endTi
     endTime: data.endTime,
   });
   
-  revalidatePath("/dashboard/vote-sessions");
-  revalidatePath("/pameran-iot/vote", "page");
+  revalidatePath("/", "layout");
 }
 
 export async function updateSession(id: number, data: { name: string, startTime: Date, endTime: Date }) {
@@ -98,8 +97,7 @@ export async function updateSession(id: number, data: { name: string, startTime:
     })
     .where(eq(vote_sessions.id, id));
 
-  revalidatePath("/dashboard/vote-sessions");
-  revalidatePath("/pameran-iot/vote", "page");
+  revalidatePath("/", "layout");
 }
 
 export async function deleteSession(id: number) {
@@ -114,8 +112,7 @@ export async function deleteSession(id: number) {
 
   await db.delete(vote_sessions).where(eq(vote_sessions.id, id));
 
-  revalidatePath("/dashboard/vote-sessions");
-  revalidatePath("/pameran-iot/vote", "page");
+  revalidatePath("/", "layout");
 }
 
 export async function startSessionNow(id: number) {
@@ -161,8 +158,7 @@ export async function startSessionNow(id: number) {
     .set({ startTime: now, endTime: newEndTime })
     .where(eq(vote_sessions.id, id));
 
-  revalidatePath("/dashboard/vote-sessions");
-  revalidatePath("/pameran-iot/vote", "page");
+  revalidatePath("/", "layout");
 }
 
 export async function endSessionNow(id: number) {
@@ -174,8 +170,7 @@ export async function endSessionNow(id: number) {
     .set({ endTime: now })
     .where(eq(vote_sessions.id, id));
 
-  revalidatePath("/dashboard/vote-sessions");
-  revalidatePath("/pameran-iot/vote", "page");
+  revalidatePath("/", "layout");
 }
 
 export async function resetSessionVotes(id: number) {
@@ -184,7 +179,5 @@ export async function resetSessionVotes(id: number) {
 
   await db.delete(votes).where(eq(votes.sessionId, id));
 
-  revalidatePath("/dashboard/vote-sessions");
-  revalidatePath("/dashboard/vote-monitor");
-  revalidatePath("/pameran-iot/vote", "page");
+  revalidatePath("/", "layout");
 }

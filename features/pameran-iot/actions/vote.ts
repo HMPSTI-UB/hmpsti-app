@@ -32,8 +32,7 @@ export async function submitVote(teamId: number, sessionId: number, voterName: s
       message: message || null,
     });
     
-    revalidatePath("/dashboard/vote-monitor");
-    revalidatePath("/dashboard/vote-sessions");
+    revalidatePath("/", "layout");
     
     return { success: true };
   } catch (error) {

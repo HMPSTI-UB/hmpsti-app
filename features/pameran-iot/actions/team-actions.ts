@@ -47,8 +47,7 @@ export async function createTeam(data: TeamFormData) {
     ...data,
   });
 
-  revalidatePath("/dashboard/iot-teams");
-  revalidatePath("/pameran-iot/vote", "page");
+  revalidatePath("/", "layout");
 }
 
 export async function updateTeam(id: number, data: TeamFormData) {
@@ -61,8 +60,7 @@ export async function updateTeam(id: number, data: TeamFormData) {
     })
     .where(eq(iot_teams.id, id));
 
-  revalidatePath("/dashboard/iot-teams");
-  revalidatePath("/pameran-iot/vote", "page");
+  revalidatePath("/", "layout");
 }
 
 export async function deleteTeam(id: number) {
@@ -74,6 +72,5 @@ export async function deleteTeam(id: number) {
   // Then delete the team
   await db.delete(iot_teams).where(eq(iot_teams.id, id));
 
-  revalidatePath("/dashboard/iot-teams");
-  revalidatePath("/pameran-iot/vote", "page");
+  revalidatePath("/", "layout");
 }

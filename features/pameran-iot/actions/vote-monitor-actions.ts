@@ -54,7 +54,5 @@ export async function deleteVote(voteId: number) {
 
   await db.delete(votes).where(eq(votes.id, voteId));
 
-  revalidatePath("/dashboard/vote-monitor");
-  revalidatePath("/dashboard/vote-sessions");
-  revalidatePath("/pameran-iot/vote", "page");
+  revalidatePath("/", "layout");
 }
