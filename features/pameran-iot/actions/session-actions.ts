@@ -139,6 +139,12 @@ export async function startSessionNow(id: number) {
   let duration = currentSession.endTime.getTime() - currentSession.startTime.getTime();
   if (duration <= 0) duration = 2 * 60 * 60 * 1000;
 
+  // Minimal durasi sesi adalah 30 menit (30 * 60 * 1000 ms)
+  const MIN_DURATION = 30 * 60 * 1000;
+  if (duration < MIN_DURATION) {
+    duration = MIN_DURATION;
+  }
+
   const newEndTime = new Date(now.getTime() + duration);
 
   await db.update(vote_sessions)
