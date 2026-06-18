@@ -24,7 +24,7 @@ export const NOISE_TEXTURE =
   'url("data:image/svg+xml,%3Csvg viewBox=%270 0 256 256%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cfilter id=%27noise%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.8%27 numOctaves=%274%27 stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23noise)%27/%3E%3C/svg%3E")';
 export const DEPARTMENT_NOISE_TEXTURE =
   'url("data:image/svg+xml,%3Csvg viewBox=%270 0 256 256%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cfilter id=%27noise%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.65%27 numOctaves=%273%27 stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23noise)%27/%3E%3C/svg%3E")';
-export const brandLogo = "/assets/logos/logo-kabinet.png";
+export const brandLogo = "hmpsti-asset/logos/logo-kabinet";
 export const organizationPlaceholderImage =
   "https://ouch-cdn2.icons8.com/3Ro3XNdxB8qJ2XJjZ_zYgZtWv51k5G7oJ7uW_JzZ_Jz/rs:fit:368:368/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvOC82/YWU4NzQ2MS0wZGM4/LTRjODMtYjNjOC02YjQ0OGIyOWFhZGYu/cG5n.png";
 export const merchInstagramUrl = "https://www.instagram.com/hmpsti.vokasiub/";
@@ -107,7 +107,7 @@ export const departments: Department[] = [
     panjang: "Pengembangan Sumber Daya Mahasiswa",
     desc: "Mewujudkan sumber daya mahasiswa Teknologi Informasi yang aktif, kompeten, berintegritas, adaptif, dan berjiwa kepemimpinan melalui proses kaderisasi dan pengembangan organisasi yang berkelanjutan.",
     theme: "sky",
-    logo: "/assets/logos/PSDM.png",
+    logo: "hmpsti-asset/logos/psdm",
     motto: "Membentuk Kader, Membangun Karakter.",
     focus: [
       "Leadership Development Camp",
@@ -125,13 +125,13 @@ export const departments: Department[] = [
       {
         nama: "Muhammad Hafizh Fajariyanto",
         jabatan: "Wakil Ketua 1",
-        foto: "/assets/leaders/Hafizh_Wakil Ketua Departemen 1_PSDM .jpg",
+        foto: "hmpsti-asset/leaders/hafizh-wakil-ketua-departemen-1-psdm",
         ig: "hapiz24_",
       },
       {
         nama: "Vallerina Gracela Purba",
         jabatan: "Wakil Ketua 2",
-        foto: "/assets/leaders/Vallerina_Wakil Ketua Departemen 2_PSDM.jpg",
+        foto: "hmpsti-asset/leaders/vallerina-wakil-ketua-departemen-2-psdm",
         ig: "vallerinacelaa",
       },
     ],
@@ -142,26 +142,26 @@ export const departments: Department[] = [
     panjang: "Inovasi & Teknologi",
     desc: "Pusat pengembangan kompetensi teknis yang praktis dan berdampak nyata. Kami berperan sebagai 'Tech-Hub' yang menjembatani mahasiswa dengan tren industri IT terkini melalui riset, kompetisi, dan portofolio karya.",
     theme: "amber",
-    logo: "/assets/logos/Inotek.png",
+    logo: "hmpsti-asset/logos/inotek",
     motto: "Explore, Compete, Create.",
     focus: ["Ignite Academy", "InKnowledge", "Roots X InnoFair"],
     leaders: [
       {
         nama: "Muhammad Rohan Rifqi",
         jabatan: "Ketua Departemen",
-        foto: "/assets/leaders/Muhammad Rohan Rifqi_Ketua Departemen_INOTEK.jpeg",
+        foto: "hmpsti-asset/leaders/muhammad-rohan-rifqi-ketua-departemen-inotek",
         ig: "rclhan",
       },
       {
         nama: "Muhammad Mu'taz Syafiq",
         jabatan: "Wakil Ketua 1",
-        foto: "/assets/leaders/Muhammad Mu_taz Syafiq_Wakil Ketua Departemen 1_INOTEK.jpg",
+        foto: "hmpsti-asset/leaders/muhammad-mu-taz-syafiq-wakil-ketua-departemen-1-inotek",
         ig: "mutazsyafiq_",
       },
       {
         nama: "Seila Salsabiela",
         jabatan: "Wakil Ketua 2",
-        foto: "/assets/leaders/Seila Salsabiela_Wakil Departemen_Inotek.jpg",
+        foto: "hmpsti-asset/leaders/seila-salsabiela-wakil-departemen-inotek",
         ig: "selai_____x",
       },
     ],
@@ -172,7 +172,7 @@ export const departments: Department[] = [
     panjang: "Media & Informasi",
     desc: "Gardu kreatif yang mengoptimalkan sistem komunikasi dan informasi berbasis teknologi. Kami fokus memperkuat identitas visual, menjembatani arus informasi, dan meningkatkan citra digital HMPSTI secara profesional.",
     theme: "sky",
-    logo: "/assets/logos/Medinfo.png",
+    logo: "hmpsti-asset/logos/medinfo",
     motto: "Creativity Beyond Limit.",
     focus: [
       "Company Profile & Branding",
@@ -183,19 +183,19 @@ export const departments: Department[] = [
       {
         nama: "Muhammad Raihan Hidayah",
         jabatan: "Ketua Departemen",
-        foto: "/assets/leaders/Han_Kepala Departemen Medinfo.JPG",
+        foto: "hmpsti-asset/leaders/han-kepala-departemen-medinfo",
         ig: "raihanhidayah06",
       },
       {
         nama: "Tiara Nurfadilah",
         jabatan: "Wakil Ketua 1",
-        foto: "/assets/leaders/Tiara_Wakil Departemen 1_MEDINFO.jpg",
+        foto: "hmpsti-asset/leaders/tiara-wakil-departemen-1-medinfo",
         ig: "tiaraa_nfh",
       },
       {
         nama: "Latisha Syifa Pratiwi",
         jabatan: "Wakil Ketua 2",
-        foto: "/assets/leaders/Latisha_Wakil Departemen 2_MEDINFO.jpg",
+        foto: "hmpsti-asset/leaders/latisha-wakil-departemen-2-medinfo",
         ig: "latisha.prtiwi",
       },
     ],
@@ -206,7 +206,7 @@ export const departments: Department[] = [
     panjang: "Advokasi & Kesejahteraan",
     desc: "Pusat advokasi dan pengabdian yang progresif. Kami hadir sebagai jembatan strategis untuk memperjuangkan hak mahasiswa, menyalurkan aspirasi, serta memberikan solusi nyata bagi kesejahteraan mahasiswa dan masyarakat.",
     theme: "amber",
-    logo: "/assets/logos/Advokesma.png",
+    logo: "hmpsti-asset/logos/advokesma",
     motto: "Melayani dengan Hati.",
     focus: [
       "TI Speaks (Layanan Advokasi)",
@@ -219,19 +219,19 @@ export const departments: Department[] = [
       {
         nama: "Kayla Alodia Calista",
         jabatan: "Ketua Departemen",
-        foto: "/assets/leaders/Kayla Alodia Calista_Kepala DepartmentAdvokesma.jpg",
+        foto: "hmpsti-asset/leaders/kayla-alodia-calista-kepala-departmentadvokesma",
         ig: "kaylalodia",
       },
       {
         nama: "Dean Adiba Anugrah",
         jabatan: "Wakil Ketua 1",
-        foto: "/assets/leaders/Dean Adiba Anugrah_Wakil Kepala Departemen Bidang Kesma_ADVOKESMA.jpg",
+        foto: "hmpsti-asset/leaders/dean-adiba-anugrah-wakil-kepala-departemen-bidang-kesma-advokesma",
         ig: "deanadiba._",
       },
       {
         nama: "Nadia Salwa Oktavia",
         jabatan: "Wakil Ketua 2",
-        foto: "/assets/leaders/Nadia Salwa Oktavia_Wakil Kepala Departemen Bidang Advokasi_ADVOKESMA.jpg",
+        foto: "hmpsti-asset/leaders/nadia-salwa-oktavia-wakil-kepala-departemen-bidang-advokasi-advokesma",
         ig: "naadiiiaaa.a",
       },
     ],
@@ -242,7 +242,7 @@ export const departments: Department[] = [
     panjang: "Hubungan Eksternal",
     desc: "Inisiator kolaborasi yang adaptif dan profesional. Kami menjadi garda terdepan dalam membangun sinergi strategis dengan mitra eksternal, alumni, dan industri untuk membuka peluang karier dan networking bagi mahasiswa.",
     theme: "sky",
-    logo: "/assets/logos/Hubeks.png",
+    logo: "hmpsti-asset/logos/hubeks",
     motto: "The Synergy Hub.",
     focus: [
       "Vistech 2.0 (Visit Technology)",
@@ -253,13 +253,13 @@ export const departments: Department[] = [
       {
         nama: "Nathanael Eleazar Handata",
         jabatan: "Ketua Departemen",
-        foto: "/assets/leaders/nathanael_ketua departemen_hubeks.jpg",
+        foto: "hmpsti-asset/leaders/nathanael-ketua-departemen-hubeks",
         ig: "nthanaellll",
       },
       {
         nama: "Evan Swardana Adinata",
         jabatan: "Wakil Ketua",
-        foto: "/assets/leaders/Evan_Wakil Kepala Departemen_HUBEKS.jpg",
+        foto: "hmpsti-asset/leaders/evan-wakil-kepala-departemen-hubeks",
         ig: "epanlagi_",
       },
     ],
@@ -270,20 +270,20 @@ export const departments: Department[] = [
     panjang: "Ekonomi Kreatif",
     desc: "Inkubator wirausaha bagi mahasiswa TI. Kami membekali mahasiswa dengan kemampuan mengemas skill IT menjadi produk bernilai ekonomi, sekaligus menjadi motor penggerak kemandirian finansial organisasi.",
     theme: "amber",
-    logo: "/assets/logos/Ekraf.png",
+    logo: "hmpsti-asset/logos/ekraf",
     motto: "Business with Passion.",
     focus: ["Jelajah Teknologi", "TI Merch", "Inspired Talk", "Creatrip"],
     leaders: [
       {
         nama: "Muktabar Zaki Pramana Wlbisono",
         jabatan: "Ketua Departemen",
-        foto: "/assets/leaders/Muktabar Zaki_KadepEkraf_HMPSTI.jpg",
+        foto: "hmpsti-asset/leaders/muktabar-zaki-kadepekraf-hmpsti",
         ig: "muktabarzaki",
       },
       {
         nama: "Dinda Eka Cantika",
         jabatan: "Wakil Ketua",
-        foto: "/assets/leaders/Dinda_WakilDepartemen_EKRAF.jpg",
+        foto: "hmpsti-asset/leaders/dinda-wakildepartemen-ekraf",
         ig: "dindaecaa",
       },
     ],
@@ -294,7 +294,7 @@ export const departments: Department[] = [
     panjang: "Kreatifitas & Olahraga",
     desc: "Wadah pengembangan potensi non-akademik yang berbasis kolaborasi dan inovasi. Kami memfasilitasi penyaluran minat bakat di bidang seni dan olahraga untuk mendorong prestasi dan keseimbangan hidup mahasiswa.",
     theme: "sky",
-    logo: "/assets/logos/Kora.png",
+    logo: "hmpsti-asset/logos/kora",
     motto: "Sportive Spirit, Creative Mind.",
     focus: [
       "Techno Competition",
@@ -306,13 +306,13 @@ export const departments: Department[] = [
       {
         nama: "Wiratama Satrio Herlambang",
         jabatan: "Ketua Departemen",
-        foto: "/assets/leaders/Wiratama Satrio H_Ketua Departemen_Kora",
+        foto: "hmpsti-asset/leaders/wiratama-satrio-h-ketua-departemen-kora",
         ig: "wirattamaa_",
       },
       {
         nama: "Raihan Ammar Ahsani",
         jabatan: "Wakil Ketua 1",
-        foto: "/assets/leaders/Raihan Ammar Ahsani_Wakil Departemen_KORA.jpg",
+        foto: "hmpsti-asset/leaders/raihan-ammar-ahsani-wakil-departemen-kora",
         ig: "amar.rhn",
       },
       {
@@ -330,7 +330,7 @@ export const bphInti: OrganizationMember[] = [
     role: "leader",
     nama: "Radja Shaka",
     jabatan: "Ketua Himpunan",
-    foto: "/assets/logos/images/radja.png",
+    foto: "hmpsti-asset/logos/images/radja",
     quote: "Memimpin dengan visi, melangkah dengan aksi.",
     instagram: "https://www.instagram.com/rs.quranique/",
   },
@@ -338,7 +338,7 @@ export const bphInti: OrganizationMember[] = [
     role: "vice",
     nama: "Putri Salsabila",
     jabatan: "Wakil Ketua",
-    foto: "/assets/logos/images/putri.png",
+    foto: "hmpsti-asset/logos/images/putri",
     quote: "Sinergi adalah kunci keberhasilan.",
     instagram: "https://www.instagram.com/ptrisabill/",
   },
@@ -346,28 +346,28 @@ export const bphInti: OrganizationMember[] = [
     role: "staff",
     nama: "Mutia Aura",
     jabatan: "Sekretaris I",
-    foto: "/assets/logos/images/mutia.png",
+    foto: "hmpsti-asset/logos/images/mutia",
     instagram: "https://www.instagram.com/mutiaauraaaa_/",
   },
   {
     role: "staff",
     nama: "Raja Esa",
     jabatan: "Sekretaris II",
-    foto: "/assets/logos/images/esa.png",
+    foto: "hmpsti-asset/logos/images/esa",
     instagram: "https://www.instagram.com/rajaesa_/",
   },
   {
     role: "staff",
     nama: "Vivi",
     jabatan: "Bendahara I",
-    foto: "/assets/logos/images/vivi.png",
+    foto: "hmpsti-asset/logos/images/vivi",
     instagram: "https://www.instagram.com/fwairypiyy/",
   },
   {
     role: "staff",
     nama: "Angel",
     jabatan: "Bendahara II",
-    foto: "/assets/logos/images/angel.png",
+    foto: "hmpsti-asset/logos/images/angel",
     instagram: "https://www.instagram.com/angelinvcn_/",
   },
 ];
@@ -379,7 +379,7 @@ export const dataKompas: {
   ketua: {
     nama: "Ghabriel Sagala",
     jabatan: "Ketua KOMPAS",
-    foto: "/assets/logos/images/gabriel.png",
+    foto: "hmpsti-asset/logos/images/gabriel",
     instagram: "https://www.instagram.com/ghabrielsagala/",
   },
   anggota: [
@@ -387,43 +387,43 @@ export const dataKompas: {
       nama: "Divo Farelly",
       jabatan: "Kompas PSDM",
       instagram: "https://www.instagram.com/divo.farrelly/",
-      foto: "/assets/logos/images/divo.png",
+      foto: "hmpsti-asset/logos/images/divo",
     },
     {
       nama: "Jiddan",
       jabatan: "Kompas Inotek",
       instagram: "https://www.instagram.com/jiddanfillah_/",
-      foto: "/assets/logos/images/jiddan.png",
+      foto: "hmpsti-asset/logos/images/jiddan",
     },
     {
       nama: "Daffa Ahmad",
       jabatan: "Kompas Medinfo",
       instagram: "https://www.instagram.com/dfaahm/",
-      foto: "/assets/logos/images/damad.png",
+      foto: "hmpsti-asset/logos/images/damad",
     },
     {
       nama: "Alisya",
       jabatan: "Kompas Advokesma",
       instagram: "https://www.instagram.com/alisyaauraf/",
-      foto: "/assets/logos/images/alisya.png",
+      foto: "hmpsti-asset/logos/images/alisya",
     },
     {
       nama: "Brillian Pratama",
       jabatan: "Kompas Hubeks",
       instagram: "https://www.instagram.com/brilianpratama__/",
-      foto: "/assets/logos/images/brillian.png",
+      foto: "hmpsti-asset/logos/images/brillian",
     },
     {
       nama: "Felisha",
       jabatan: "Kompas Ekraf",
       instagram: "https://www.instagram.com/felisharegitaa/",
-      foto: "/assets/logos/images/felisha.png",
+      foto: "hmpsti-asset/logos/images/felisha",
     },
     {
       nama: "Ghatan Naufal",
       jabatan: "Kompas Kora",
       instagram: "https://www.instagram.com/ghatan.naufal/",
-      foto: "/assets/logos/images/ghatan.png",
+      foto: "hmpsti-asset/logos/images/ghatan",
     },
   ],
 };
