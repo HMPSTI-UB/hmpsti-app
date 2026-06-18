@@ -20,6 +20,10 @@
 # production
 /build
 
+# python helper scripts
+/scripts
+/temp_downloads
+
 # misc
 .DS_Store
 *.pem
