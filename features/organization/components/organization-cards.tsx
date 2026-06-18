@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CldImage as Image } from "next-cloudinary";
 import { Instagram } from "@/components/social-icons";
 import { cn } from "@/lib/utils";
 import { organizationPlaceholderImage } from "@/constant/data";
