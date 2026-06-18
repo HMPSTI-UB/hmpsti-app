@@ -35,6 +35,7 @@ export const navLinks: NavLinkData[] = [
   { name: "Departemen", path: "/departemen" },
   { name: "Kalender", path: "/kalender" },
   { name: "Merch", path: "/merch" },
+  { name: "Pameran IoT", path: "/pameran-iot" },
 ];
 
 export const quickMenuItems: QuickMenuItem[] = [

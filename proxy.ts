@@ -11,7 +11,9 @@ export default auth((req) => {
     return null;
   }
 
-  if (!isLoggedIn && req.nextUrl.pathname.startsWith('/dashboard')) {
+  const isProtectedRoute = req.nextUrl.pathname.startsWith('/dashboard') || req.nextUrl.pathname.startsWith('/pameran-iot/vote');
+
+  if (!isLoggedIn && isProtectedRoute) {
     return Response.redirect(new URL('/auth/login', req.nextUrl));
   }
 })
