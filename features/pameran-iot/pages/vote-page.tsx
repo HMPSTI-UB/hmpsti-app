@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Search, Trophy, Heart, X, CheckCircle2, Clock } from "lucide-react";
 import { submitVote } from "../actions/vote";
+import { toast } from "sonner";
 import Image from "next/image";
 import {
   Select,
@@ -26,7 +27,6 @@ export interface Team {
 
 export default function VotePage({ initialTeams, activeSession }: { initialTeams: Team[], activeSession: any }) {
   const [selectedProduct, setSelectedProduct] = useState<Team | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states
@@ -60,7 +60,7 @@ export default function VotePage({ initialTeams, activeSession }: { initialTeams
 
   const handleVote = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProduct || !activeSession) return;
+    if (!selectedProduct || !activeSession || isSubmitting) return;
     
     setIsSubmitting(true);
     const result = await submitVote(selectedProduct.id, activeSession.id, nama, kesan);
@@ -72,11 +72,14 @@ export default function VotePage({ initialTeams, activeSession }: { initialTeams
       setNama("");
       setKesan("");
       
-      // Show success
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      // Show success toast
+      toast.success("Vote berhasil dicatat!", {
+        position: "top-right",
+      });
     } else {
-      alert("Gagal mencatat vote. Pastikan Anda sudah login.");
+      toast.error("Gagal mencatat vote. Silakan coba lagi.", {
+        position: "top-right",
+      });
     }
   };
 
@@ -145,14 +148,6 @@ export default function VotePage({ initialTeams, activeSession }: { initialTeams
             </Select>
           </div>
         </div>
-
-        {/* Success Alert */}
-        {showSuccess && (
-          <div className="max-w-xl mx-auto flex items-center justify-center gap-2 bg-green-500/20 border border-green-500/30 text-green-400 px-4 py-3 rounded-xl animate-in fade-in slide-in-from-top-4 duration-300">
-            <CheckCircle2 className="w-5 h-5" />
-            <span className="font-medium">Vote berhasil dicatat!</span>
-          </div>
-        )}
 
         {/* Projects Grid / Empty State */}
         {filteredProducts.length === 0 ? (
@@ -282,9 +277,14 @@ export default function VotePage({ initialTeams, activeSession }: { initialTeams
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-4 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5"
+                  disabled={isSubmitting}
+                  className={`flex-1 px-4 py-3 rounded-xl font-bold transition-all shadow-lg ${
+                    isSubmitting 
+                      ? "bg-gray-600 text-gray-400 cursor-not-allowed shadow-none" 
+                      : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5"
+                  }`}
                 >
-                  Submit Vote
+                  {isSubmitting ? "Menyimpan..." : "Submit Vote"}
                 </button>
               </div>
             </form>
