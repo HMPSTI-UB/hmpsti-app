@@ -182,7 +182,7 @@ async function main() {
         className: 'T4C',
         groupNumber: 3,
         title: "RANCANG BANGUN SMART ZEBRA CROSS BERBASIS IOT DENGAN ESP32 TERINTEGRASI WEB MONITORING",
-        teamMembers: "1.	Muhammad Abdul Azis – 243140701111012\n2.	Syakie Nor Aditya – 243140701111023\n3.	Salsabila Danesti – 243140701111034\n4.	Lintang Lestari – 243140701111029",
+        teamMembers: "1.        Muhammad Abdul Azis – 243140701111012\n2.        Syakie Nor Aditya – 243140701111023\n3.        Salsabila Danesti – 243140701111034\n4.        Lintang Lestari – 243140701111029",
         bannerImageUrl: 'https://res.cloudinary.com/drhn0kkxq/image/upload/v1781780918/hmpsti/pameran-iot/banner_T4C3.png',
         projectImageUrl: 'https://res.cloudinary.com/drhn0kkxq/image/upload/v1781783291/hmpsti/pameran-iot/project_T4C3.png',
         sessionId: 1
@@ -292,7 +292,7 @@ async function main() {
         className: 'T4E',
         groupNumber: 2,
         title: "Smart Automatic Drawbridge",
-        teamMembers: "•	Olivia Fauziah 			243140707111025  				\n•	Febriananta P			243140707111027				\n•	Muhammad Farel			243140707111024",
+        teamMembers: "•        Olivia Fauziah                         243140707111025                                  \n•        Febriananta P                        243140707111027                                \n•        Muhammad Farel                        243140707111024",
         bannerImageUrl: 'https://res.cloudinary.com/drhn0kkxq/image/upload/v1781781095/hmpsti/pameran-iot/banner_T4E2.png',
         projectImageUrl: 'https://res.cloudinary.com/drhn0kkxq/image/upload/v1781783463/hmpsti/pameran-iot/project_T4E2.jpg',
         sessionId: 2
@@ -322,7 +322,7 @@ async function main() {
         className: 'T4E',
         groupNumber: 5,
         title: "SOPAN",
-        teamMembers: "Ghatan Naufal Daniyal Ariefin   	-       	243140707111032\nBrilian Pratama Putra Cahyana 	-       	243140707111034\nSyafira Firdausi Nuzula               	-       	243140707111036\nBunga Cinta Lovesia Anatasia    -       	243140707111046\nTya Ayu Agustin                           	-       	243140707111048",
+        teamMembers: "Ghatan Naufal Daniyal Ariefin           -               243140707111032\nBrilian Pratama Putra Cahyana         -               243140707111034\nSyafira Firdausi Nuzula                       -               243140707111036\nBunga Cinta Lovesia Anatasia    -               243140707111046\nTya Ayu Agustin                                   -               243140707111048",
         bannerImageUrl: 'https://res.cloudinary.com/drhn0kkxq/image/upload/v1781781130/hmpsti/pameran-iot/banner_T4E5.jpg',
         projectImageUrl: 'https://res.cloudinary.com/drhn0kkxq/image/upload/v1781783495/hmpsti/pameran-iot/project_T4E5.jpg',
         sessionId: 2
@@ -362,7 +362,7 @@ async function main() {
         className: 'T4F',
         groupNumber: 2,
         title: "NerveDesk-IoT",
-        teamMembers: "Ghabriel Theo Petra Sagala	243140707111076\nNashwa Salsabilah		243140707111054\nMuchamad Dhiya Mirza	243140707111055\nAlisya Aprilia Aura F		243140707111063\nDinda Aril Tria Kusuma Aji	243140707111067",
+        teamMembers: "Ghabriel Theo Petra Sagala        243140707111076\nNashwa Salsabilah                243140707111054\nMuchamad Dhiya Mirza        243140707111055\nAlisya Aprilia Aura F                243140707111063\nDinda Aril Tria Kusuma Aji        243140707111067",
         bannerImageUrl: 'https://res.cloudinary.com/drhn0kkxq/image/upload/v1781781202/hmpsti/pameran-iot/banner_T4F2.png',
         projectImageUrl: 'https://res.cloudinary.com/drhn0kkxq/image/upload/v1781783571/hmpsti/pameran-iot/project_T4F2.png',
         sessionId: 2
@@ -392,7 +392,7 @@ async function main() {
         className: 'T4F',
         groupNumber: 6,
         title: "SMART AQUACULTURE AND MONITORING AUTOMATIC WATER MANAGEMENT SYSTEM",
-        teamMembers: "243140707111058 - Nazwa Nur Maulidiyah \n243140707111059 - Gadang Aji Ramadhan \n243140707111064 - Intana Putri Nadewi	 \n243140707111073 - Farid Muhammad I.	 \n243140707111078 - Yuko Fildza Zafira J.",
+        teamMembers: "243140707111058 - Nazwa Nur Maulidiyah \n243140707111059 - Gadang Aji Ramadhan \n243140707111064 - Intana Putri Nadewi         \n243140707111073 - Farid Muhammad I.         \n243140707111078 - Yuko Fildza Zafira J.",
         bannerImageUrl: 'https://res.cloudinary.com/drhn0kkxq/image/upload/v1781781249/hmpsti/pameran-iot/banner_T4F6.png',
         projectImageUrl: 'https://res.cloudinary.com/drhn0kkxq/image/upload/v1781783619/hmpsti/pameran-iot/project_T4F6.png',
         sessionId: 2
@@ -476,6 +476,26 @@ async function main() {
         bannerImageUrl: 'https://res.cloudinary.com/drhn0kkxq/image/upload/v1781781367/hmpsti/pameran-iot/banner_T4F3.jpg',
         projectImageUrl: 'https://res.cloudinary.com/drhn0kkxq/image/upload/v1781783752/hmpsti/pameran-iot/project_T4F3.jpg',
         sessionId: 2
+      },
+      {
+        code: 'T4A8',
+        className: 'T4A',
+        groupNumber: 8,
+        title: "SMART FALL DETECTION & EMERGENCY ALERT SYSTEM",
+        teamMembers: "Dzaky Alfauzy Naw-waf Akbar 243140701111046\nRusenda Immanuel Bagasanto 243140707111019\nM. Taufiequrohim Ridwan 243140701111023\nPhillipus Zerah Suhardiman 243140701111051",
+        bannerImageUrl: 'https://res.cloudinary.com/drhn0kkxq/image/upload/v1781875425/hmpsti/pameran-iot/banner_T4A8.png',
+        projectImageUrl: 'https://res.cloudinary.com/drhn0kkxq/image/upload/v1781875444/hmpsti/pameran-iot/project_T4A8.jpg',
+        sessionId: 1
+      },
+      {
+        code: 'T4C7',
+        className: 'T4C',
+        groupNumber: 7,
+        title: "Smart Infus Monitoring System",
+        teamMembers: "Muhajir Amrullah 243140701111042\nAdam Ahmad Bimantoro 24314070111127\nM Alfian Bagus Hamdani 24314070111139\nMuhammad Arga Pradana 24314070111131",
+        bannerImageUrl: 'https://res.cloudinary.com/drhn0kkxq/image/upload/v1781875477/hmpsti/pameran-iot/banner_T4C7.png',
+        projectImageUrl: 'https://res.cloudinary.com/drhn0kkxq/image/upload/v1781875530/hmpsti/pameran-iot/project_T4C7.jpg',
+        sessionId: 1
       },
     ]);
     console.log('Successfully seeded IoT Teams.');
