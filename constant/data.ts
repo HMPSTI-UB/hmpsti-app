@@ -540,3 +540,51 @@ export const failedAnnouncementNames = [
   "Ridhwan Purwahdani",
   "Dwiki Ilman Nafian",
 ];
+
+export const merchCategories: import("@/types/data").MerchCategory[] = ["Semua", "Pakaian", "Aksesoris", "Bundle", "Lainnya"];
+
+export const merchProducts: import("@/types/data").MerchProduct[] = [
+  {
+    id: "m1",
+    name: "T-Shirt Innovara",
+    price: 120000,
+    description: "T-Shirt eksklusif edisi Kabinet Innovara dengan bahan katun premium 24s. Nyaman dipakai untuk sehari-hari.",
+    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80",
+    category: "Pakaian",
+    sizes: ["S", "M", "L", "XL", "XXL"],
+  },
+  {
+    id: "m2",
+    name: "Lanyard TI Jaya",
+    price: 35000,
+    description: "Lanyard HMPSTI dengan desain elegan, cocok untuk menggantungkan ID Card kampus.",
+    image: "https://images.unsplash.com/photo-1601004890684-d8cbf643f5f2?auto=format&fit=crop&w=800&q=80",
+    category: "Aksesoris",
+  },
+  {
+    id: "m3",
+    name: "Totebag Minimalist",
+    price: 65000,
+    description: "Totebag canvas tebal dengan logo Innovara, muat untuk laptop 14 inch dan buku kuliah.",
+    image: "https://images.unsplash.com/photo-1597404294360-feeeda04612e?auto=format&fit=crop&w=800&q=80",
+    category: "Aksesoris",
+  },
+  {
+    id: "m4",
+    name: "Jacket Varsity HMPSTI",
+    price: 250000,
+    description: "Jacket varsity premium dengan bordir komputer detail tinggi. Tunjukkan kebanggaanmu sebagai mahasiswa TI.",
+    image: "https://images.unsplash.com/photo-1559551409-dadc959f76b8?auto=format&fit=crop&w=800&q=80",
+    category: "Pakaian",
+    sizes: ["M", "L", "XL", "XXL"],
+  },
+  {
+    id: "m5",
+    name: "Bundle Starter Pack",
+    price: 150000,
+    description: "Paket hemat berisi T-Shirt Innovara dan Lanyard TI Jaya.",
+    image: "https://images.unsplash.com/photo-1607083206968-13611e3d76db?auto=format&fit=crop&w=800&q=80",
+    category: "Bundle",
+    sizes: ["S", "M", "L", "XL", "XXL"],
+  }
+];

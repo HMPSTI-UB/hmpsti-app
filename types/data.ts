@@ -70,3 +70,22 @@ export type AspirasiTopic = {
   label: string;
   value: string;
 };
+
+export type MerchCategory = "Semua" | "Pakaian" | "Aksesoris" | "Bundle" | "Lainnya";
+
+export type MerchProduct = {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  image: string;
+  category: MerchCategory;
+  sizes?: string[];
+};
+
+export type CartItem = {
+  id: string; // Unique ID combining productId and selectedSize
+  product: MerchProduct;
+  quantity: number;
+  selectedSize?: string;
+};
