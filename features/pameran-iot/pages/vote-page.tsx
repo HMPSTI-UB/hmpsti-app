@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { ActiveSession } from "../types";
 
 export interface Team {
   id: number;
@@ -25,7 +26,7 @@ export interface Team {
   sessionId: number;
 }
 
-export default function VotePage({ initialTeams, activeSession }: { initialTeams: Team[], activeSession: any }) {
+export default function VotePage({ initialTeams, activeSession }: { initialTeams: Team[], activeSession: ActiveSession }) {
   const [selectedProduct, setSelectedProduct] = useState<Team | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

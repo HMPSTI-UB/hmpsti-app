@@ -2,10 +2,12 @@
 
 import { db } from "@/db"
 import { iot_teams, vote_sessions, votes } from "@/db/schema"
-import { eq, sql, desc, sum, count } from "drizzle-orm"
+import { eq, sql, desc } from "drizzle-orm"
 
 export async function getLiveVoteData(sessionId?: number) {
-  let query = db
+  const where = sessionId !== undefined ? eq(iot_teams.sessionId, sessionId) : undefined;
+
+  const results = await db
     .select({
       id: iot_teams.id,
       code: iot_teams.code,
@@ -19,13 +21,8 @@ export async function getLiveVoteData(sessionId?: number) {
       votes: sql<number>`count(${votes.id})::int`
     })
     .from(iot_teams)
-    .leftJoin(votes, eq(iot_teams.id, votes.teamId));
-
-  if (sessionId !== undefined) {
-    query = query.where(eq(iot_teams.sessionId, sessionId)) as any;
-  }
-
-  const results = await query
+    .leftJoin(votes, eq(iot_teams.id, votes.teamId))
+    .where(where)
     .groupBy(iot_teams.id)
     .orderBy(desc(sql`count(${votes.id})`));
 
