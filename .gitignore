@@ -20,6 +20,10 @@
 # production
 /build
 
+# python helper scripts
+/scripts
+/temp_downloads
+
 # misc
 .DS_Store
 *.pem
@@ -35,6 +39,9 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# claude code (local knowledge/memory)
+.claude/
 
 # typescript
 *.tsbuildinfo
