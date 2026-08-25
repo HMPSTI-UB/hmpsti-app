@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useCallback } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
@@ -19,13 +20,24 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createTeam, updateTeam, deleteTeam, TeamFormData } from "../actions/team-actions";
 import { uploadImage } from "../actions/upload-action";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/handle-action";
-import { usePagination, type PerPage } from "../hooks/use-pagination";
 import { ImageUploadField } from "./image-upload-field";
 import { PaginationBar } from "./pagination-bar";
 import type { AdminTeam, AdminSession } from "../types";
+
+interface TeamManagerProps {
+  teams: AdminTeam[];
+  total: number;
+  currentPage: number;
+  totalPages: number;
+  pageSize: string;
+  sessions: AdminSession[];
+  classes: string[];
+  currentSearch: string;
+  currentClass: string;
+  currentSession: string | undefined;
+}
 
 const emptyForm = (sessions: AdminSession[]): TeamFormData => ({
   code: "",
@@ -38,13 +50,25 @@ const emptyForm = (sessions: AdminSession[]): TeamFormData => ({
   sessionId: sessions.length > 0 ? sessions[0].id : 0,
 });
 
-export function TeamManager({ initialTeams, sessions }: { initialTeams: AdminTeam[], sessions: AdminSession[] }) {
+export function TeamManager({
+  teams,
+  total,
+  currentPage,
+  totalPages,
+  pageSize,
+  sessions,
+  classes,
+  currentSearch,
+  currentClass,
+  currentSession,
+}: TeamManagerProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<AdminTeam | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
 
   // Form State
   const [formData, setFormData] = useState<TeamFormData>(() => emptyForm(sessions));
@@ -52,33 +76,27 @@ export function TeamManager({ initialTeams, sessions }: { initialTeams: AdminTea
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [uploadingProject, setUploadingProject] = useState(false);
 
-  // Filter States
-  const [selectedClass, setSelectedClass] = useState<string>("ALL");
-  const [selectedSession, setSelectedSession] = useState<string>("ALL");
-  const [itemsPerPageStr, setItemsPerPageStr] = useState<PerPage>("ALL");
+  // Build new URL with updated params
+  const buildUrl = useCallback((updates: Record<string, string | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (value === undefined || value === "" || value === "ALL") {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    }
+    // Always reset to page 1 when any filter/search changes (unless explicitly setting page)
+    if (!("page" in updates)) {
+      params.delete("page");
+    }
+    const qs = params.toString();
+    return qs ? `${pathname}?${qs}` : pathname;
+  }, [pathname, searchParams]);
 
-  const classes = Array.from(new Set(initialTeams.map(t => t.className))).sort();
-
-  const filteredTeams = initialTeams.filter(team => {
-    const matchSearch = team.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                       team.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                       team.className.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchClass = selectedClass === "ALL" || team.className === selectedClass;
-    const matchSession = selectedSession === "ALL" || String(team.sessionId) === selectedSession;
-
-    return matchSearch && matchClass && matchSession;
-  });
-
-  const { page, setPage, totalPages, pageItems, pageSize, startIndex } =
-    usePagination(filteredTeams, itemsPerPageStr);
-
-  // Reset ke halaman 1 setiap kali filter/pencarian berubah.
-  const resetToFirstPage = () => setPage(1);
-  const handleFilterChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (value: string) => {
-    setter(value);
-    resetToFirstPage();
-  };
+  const navigate = useCallback((updates: Record<string, string | undefined>) => {
+    router.push(buildUrl(updates));
+  }, [router, buildUrl]);
 
   const handleOpenDialog = (team?: AdminTeam) => {
     setError(null);
@@ -156,6 +174,11 @@ export function TeamManager({ initialTeams, sessions }: { initialTeams: AdminTea
     });
   };
 
+  // Derived display values
+  const resolvedPageSize = pageSize === "ALL" ? total : parseInt(pageSize, 10);
+  const startIndex = (currentPage - 1) * resolvedPageSize;
+
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -169,17 +192,23 @@ export function TeamManager({ initialTeams, sessions }: { initialTeams: AdminTea
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               placeholder="Cari tim..."
-              value={searchQuery}
+              defaultValue={currentSearch}
               onChange={(e) => {
-                setSearchQuery(e.target.value);
-                resetToFirstPage();
+                // Debounce-lite: navigate on change with a small delay so user can keep typing
+                const val = e.target.value;
+                const timer = setTimeout(() => navigate({ search: val }), 400);
+                return () => clearTimeout(timer);
               }}
               className="pl-9 bg-white/5 border-white/10 text-white w-full"
             />
           </div>
 
           <div className="flex flex-wrap sm:flex-nowrap w-full sm:w-auto items-center gap-3">
-            <Select value={String(itemsPerPageStr)} onValueChange={(val) => { setItemsPerPageStr(val === "ALL" ? "ALL" : Number(val)); resetToFirstPage(); }}>
+            {/* Rows per page */}
+            <Select
+              value={pageSize}
+              onValueChange={(val) => navigate({ pageSize: val })}
+            >
               <SelectTrigger className="w-full sm:w-[90px] bg-white/5 border border-white/10 text-white">
                 <SelectValue placeholder="Tampil" />
               </SelectTrigger>
@@ -191,21 +220,29 @@ export function TeamManager({ initialTeams, sessions }: { initialTeams: AdminTea
               </SelectContent>
             </Select>
 
-            <Select value={selectedClass} onValueChange={handleFilterChange(setSelectedClass)}>
+            {/* Filter kelas */}
+            <Select
+              value={currentClass}
+              onValueChange={(val) => navigate({ className: val })}
+            >
               <SelectTrigger className="w-full sm:w-[130px] bg-white/5 border border-white/10 text-white">
                 <SelectValue placeholder="Semua Kelas" />
               </SelectTrigger>
               <SelectContent className="bg-[#111] border-white/10 text-white">
                 <SelectItem value="ALL" className="focus:bg-white/10 focus:text-white cursor-pointer">Semua Kelas</SelectItem>
                 {classes.map((c) => (
-                  <SelectItem key={String(c)} value={String(c)} className="focus:bg-white/10 focus:text-white cursor-pointer">
-                    Kelas {String(c)}
+                  <SelectItem key={c} value={c} className="focus:bg-white/10 focus:text-white cursor-pointer">
+                    Kelas {c}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <Select value={selectedSession} onValueChange={handleFilterChange(setSelectedSession)}>
+            {/* Filter sesi */}
+            <Select
+              value={currentSession ?? "ALL"}
+              onValueChange={(val) => navigate({ sessionId: val === "ALL" ? undefined : val })}
+            >
               <SelectTrigger className="w-full sm:w-[130px] bg-white/5 border border-white/10 text-white">
                 <SelectValue placeholder="Semua Sesi" />
               </SelectTrigger>
@@ -357,14 +394,14 @@ export function TeamManager({ initialTeams, sessions }: { initialTeams: AdminTea
             </TableRow>
           </TableHeader>
           <TableBody>
-            {pageItems.length === 0 ? (
+            {teams.length === 0 ? (
               <TableRow className="border-white/10 hover:bg-white/5">
                 <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                   Tidak ada tim yang ditemukan
                 </TableCell>
               </TableRow>
             ) : (
-              pageItems.map((team) => (
+              teams.map((team) => (
                 <TableRow key={team.id} className="border-white/10 hover:bg-white/5">
                   <TableCell className="font-bold text-white whitespace-nowrap">
                     {team.code}
@@ -430,12 +467,12 @@ export function TeamManager({ initialTeams, sessions }: { initialTeams: AdminTea
         </Table>
 
         <PaginationBar
-          page={page}
+          page={currentPage}
           totalPages={totalPages}
-          onPageChange={setPage}
+          onPageChange={(p) => navigate({ page: String(p) })}
           startIndex={startIndex}
-          pageSize={pageSize}
-          totalItems={filteredTeams.length}
+          pageSize={resolvedPageSize}
+          totalItems={total}
           itemLabel="tim"
         />
       </div>

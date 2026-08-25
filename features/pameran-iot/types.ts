@@ -8,7 +8,8 @@ import type { getActiveSession } from "./actions/get-teams";
  * selalu sinkron dengan bentuk query DB — tidak perlu maintain tipe manual,
  * dan tidak ada lagi `any` di boundary komponen.
  */
-export type AdminTeam = Awaited<ReturnType<typeof getAdminTeams>>[number];
+export type AdminTeam = Awaited<ReturnType<typeof getAdminTeams>>["teams"][number];
+
 export type AdminSession = Awaited<ReturnType<typeof getAdminSessions>>[number];
 export type VoteRanking = Awaited<ReturnType<typeof getVoteRankings>>[number];
 export type TeamVote = Awaited<ReturnType<typeof getTeamVotes>>[number];
