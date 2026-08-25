@@ -26,21 +26,21 @@ export function ProductFilter({
               <button
                 key={category}
                 onClick={() => onSelectCategory(category)}
-                className="relative px-6 py-2.5 rounded-full group cursor-pointer transition-transform duration-500 hover:scale-[0.98] active:scale-[0.95]"
+                className="relative px-4 py-1.5 rounded-full group cursor-pointer transition-transform duration-500 hover:scale-[0.98] active:scale-[0.95]"
               >
                 {/* Active Pill Background */}
                 {isActive && (
                   <motion.div
                     layoutId="activeFilterPill"
-                    className="absolute inset-0 bg-white rounded-full shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                    className="absolute inset-0 bg-[#33A5D3] rounded-full shadow-[0_0_15px_rgba(51,165,211,0.3)]"
                     transition={{ duration: 0.6, ease: customEase }}
                   />
                 )}
                 
                 <span
                   className={cn(
-                    "relative z-10 text-[11px] font-medium uppercase tracking-[0.15em] transition-colors duration-500",
-                    isActive ? "text-black" : "text-gray-500 group-hover:text-gray-300"
+                    "relative z-10 text-[10px] font-bold uppercase tracking-[0.15em] transition-colors duration-500",
+                    isActive ? "text-white" : "text-gray-400 group-hover:text-white"
                   )}
                 >
                   {category}

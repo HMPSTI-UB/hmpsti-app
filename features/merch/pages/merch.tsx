@@ -62,7 +62,7 @@ function MerchContent() {
           style={{ backgroundImage: DEPARTMENT_NOISE_TEXTURE }}
         />
 
-        <div className="relative z-10 w-full max-w-[1400px] mx-auto px-4 md:px-8 pt-40 md:pt-48">
+        <div className="relative z-10 w-full max-w-[1400px] mx-auto px-4 md:px-8 pt-28 md:pt-32">
           
           {/* TOP NAV/ISLAND (Search + Cart) */}
           <FadeIn delay={0.1} y={-20} className="w-full flex justify-center mb-8 md:mb-12 relative z-50">
@@ -107,33 +107,22 @@ function MerchContent() {
             </div>
           </FadeIn>
 
-          {/* EDITORIAL SPLIT HERO */}
-          <div className="flex flex-col md:flex-row gap-12 md:gap-24 mb-16 md:mb-24 items-start">
-            <div className="w-full md:w-1/2">
-              <FadeIn delay={0.2}>
-                <span className="text-xs uppercase tracking-[0.3em] text-[#33A5D3] font-medium mb-4 block">
-                  HMPSTI Store
+          {/* EDITORIAL HERO */}
+          <div className="flex flex-col gap-4 mb-16 md:mb-24 items-start">
+            <FadeIn delay={0.3}>
+              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black uppercase tracking-tighter leading-tight text-white drop-shadow-2xl">
+                HMPSTI{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-500 via-white to-amber-500">
+                  STORE
                 </span>
-              </FadeIn>
-
-              <FadeIn delay={0.3}>
-                <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black uppercase tracking-tighter leading-[0.9] text-white drop-shadow-2xl">
-                  The
-                  <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-500 via-white to-amber-500">
-                    Collection
-                  </span>
-                </h1>
-              </FadeIn>
-            </div>
+              </h1>
+            </FadeIn>
             
-            <div className="w-full md:w-1/2 md:pt-20">
-              <FadeIn delay={0.4} className="mb-12 md:mb-16">
-                <p className="text-lg md:text-2xl text-gray-400 font-light leading-relaxed max-w-lg">
-                  Tampil kece dan bangga jadi anak TI. Jelajahi koleksi eksklusif dari <span className="text-white font-bold uppercase">KABINET INNOVARA</span>, dirancang dengan presisi dan estetika modern.
-                </p>
-              </FadeIn>
-            </div>
+            <FadeIn delay={0.4}>
+              <p className="text-gray-400 text-sm md:text-xl max-w-3xl leading-relaxed">
+                Tampil kece dan bangga jadi anak TI. Jelajahi koleksi eksklusif dari <span className="text-white font-bold uppercase">KABINET INNOVARA</span>, dirancang dengan presisi dan estetika modern.
+              </p>
+            </FadeIn>
           </div>
 
           {/* FILTER */}
