@@ -50,10 +50,10 @@ export default function ProductDetail({ product }: { product: MerchProduct }) {
           Kembali ke Katalog
         </Link>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-16">
           
           {/* Left Column: Images Gallery */}
-          <div className="w-full flex flex-col gap-4">
+          <div className="w-full md:col-span-5 flex flex-col gap-4">
             {/* Main Image */}
             <motion.div 
               initial={{ opacity: 0, x: -30 }}
@@ -107,22 +107,22 @@ export default function ProductDetail({ product }: { product: MerchProduct }) {
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="flex flex-col justify-center"
+            className="md:col-span-7 flex flex-col justify-start md:pt-4 h-full"
           >
-            <h1 className="text-4xl md:text-5xl font-black mb-2 uppercase tracking-tighter">
+            <h1 className="text-3xl md:text-4xl lg:text-[42px] font-black mb-3 uppercase tracking-tighter leading-none">
               {product.name}
             </h1>
-            <p className="text-[#33A5D3] text-lg font-bold tracking-widest uppercase mb-8">
+            <p className="text-[#33A5D3] text-lg font-bold tracking-widest uppercase mb-3">
               {product.category}
             </p>
             
-            <div className="mb-10">
+            <div className="mb-6">
               <p className="text-gray-300 leading-relaxed">
                 {product.description}
               </p>
             </div>
 
-            <div className="mb-8">
+            <div className="mb-6">
               <p className="text-4xl font-black text-white mb-2">
                 Rp {product.price.toLocaleString("id-ID")}
               </p>
@@ -133,7 +133,7 @@ export default function ProductDetail({ product }: { product: MerchProduct }) {
 
             {/* Size Options (if any) */}
             {product.sizes && product.sizes.length > 0 && (
-              <div className="mb-8">
+              <div className="mb-6">
                 <span className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">
                   Pilih Ukuran
                 </span>
@@ -156,7 +156,7 @@ export default function ProductDetail({ product }: { product: MerchProduct }) {
             )}
 
             {/* Actions: Quantity & Buttons */}
-            <div className="mt-4">
+            <div className="mt-auto">
               
               {/* Quantity Selector (Shopee Style) */}
               <div className="flex items-center gap-6 mb-6">
