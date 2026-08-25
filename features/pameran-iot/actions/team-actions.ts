@@ -3,8 +3,7 @@
 import { db } from "@/db"
 import { iot_teams, vote_sessions, votes } from "@/db/schema"
 import { eq, sql } from "drizzle-orm"
-import { auth } from "@/auth"
-import { revalidatePath } from "next/cache"
+import { requireUser, revalidateAll } from "./_guards"
 
 export async function getAdminTeams() {
   const result = await db
@@ -40,19 +39,17 @@ export type TeamFormData = {
 };
 
 export async function createTeam(data: TeamFormData) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  await requireUser();
 
   await db.insert(iot_teams).values({
     ...data,
   });
 
-  revalidatePath("/", "layout");
+  revalidateAll();
 }
 
 export async function updateTeam(id: number, data: TeamFormData) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  await requireUser();
 
   await db.update(iot_teams)
     .set({
@@ -60,17 +57,16 @@ export async function updateTeam(id: number, data: TeamFormData) {
     })
     .where(eq(iot_teams.id, id));
 
-  revalidatePath("/", "layout");
+  revalidateAll();
 }
 
 export async function deleteTeam(id: number) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  await requireUser();
 
   // First delete all votes related to this team to satisfy foreign key constraint
   await db.delete(votes).where(eq(votes.teamId, id));
   // Then delete the team
   await db.delete(iot_teams).where(eq(iot_teams.id, id));
 
-  revalidatePath("/", "layout");
+  revalidateAll();
 }

@@ -2,13 +2,12 @@
 
 import { db } from "@/db"
 import { vote_sessions, iot_teams, votes } from "@/db/schema"
-import { eq, sql, and, lt, gt, or, ne, countDistinct } from "drizzle-orm"
-import { auth } from "@/auth"
-import { revalidatePath } from "next/cache"
+import { eq, sql, and, lt, gt, lte, gte, or, ne, countDistinct } from "drizzle-orm"
+import { requireUser, revalidateAll } from "./_guards"
 
 // Helper to check if any session is active now or will overlap with given times
 async function checkOverlap(startTime: Date, endTime: Date, excludeId?: number) {
-  let conditions = or(
+  const overlaps = or(
     // 1. New session starts during an existing session
     and(
       lt(vote_sessions.startTime, startTime),
@@ -31,14 +30,14 @@ async function checkOverlap(startTime: Date, endTime: Date, excludeId?: number) 
     )
   );
 
-  if (excludeId) {
-    conditions = and(conditions!, ne(vote_sessions.id, excludeId));
-  }
+  const conditions = excludeId
+    ? and(overlaps, ne(vote_sessions.id, excludeId))
+    : overlaps;
 
   const overlappingSessions = await db
     .select({ id: vote_sessions.id, name: vote_sessions.name })
     .from(vote_sessions)
-    .where(conditions!);
+    .where(conditions);
 
   return overlappingSessions;
 }
@@ -63,8 +62,7 @@ export async function getAdminSessions() {
 }
 
 export async function createSession(data: { name: string, startTime: Date, endTime: Date }) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  await requireUser();
 
   const overlap = await checkOverlap(data.startTime, data.endTime);
   if (overlap.length > 0) {
@@ -76,13 +74,12 @@ export async function createSession(data: { name: string, startTime: Date, endTi
     startTime: data.startTime,
     endTime: data.endTime,
   });
-  
-  revalidatePath("/", "layout");
+
+  revalidateAll();
 }
 
 export async function updateSession(id: number, data: { name: string, startTime: Date, endTime: Date }) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  await requireUser();
 
   const overlap = await checkOverlap(data.startTime, data.endTime, id);
   if (overlap.length > 0) {
@@ -97,12 +94,11 @@ export async function updateSession(id: number, data: { name: string, startTime:
     })
     .where(eq(vote_sessions.id, id));
 
-  revalidatePath("/", "layout");
+  revalidateAll();
 }
 
 export async function deleteSession(id: number) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  await requireUser();
 
   // Check if session has teams
   const teams = await db.select().from(iot_teams).where(eq(iot_teams.sessionId, id));
@@ -112,23 +108,21 @@ export async function deleteSession(id: number) {
 
   await db.delete(vote_sessions).where(eq(vote_sessions.id, id));
 
-  revalidatePath("/", "layout");
+  revalidateAll();
 }
 
 export async function startSessionNow(id: number) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  await requireUser();
 
-  const now = new Date();
-
-  // Check if ANY session is currently active (excluding the one we want to start)
+  // Cek apakah ADA sesi lain yang sedang aktif — pakai jam server DB
+  // (CURRENT_TIMESTAMP), bukan `new Date()` JS, untuk hindari mismatch timezone.
   const currentlyActive = await db
     .select({ name: vote_sessions.name })
     .from(vote_sessions)
     .where(
       and(
-        lt(vote_sessions.startTime, now),
-        gt(vote_sessions.endTime, now),
+        lte(vote_sessions.startTime, sql`CURRENT_TIMESTAMP`),
+        gte(vote_sessions.endTime, sql`CURRENT_TIMESTAMP`),
         ne(vote_sessions.id, id)
       )
     );
@@ -141,7 +135,7 @@ export async function startSessionNow(id: number) {
   if (!sessionRecord || sessionRecord.length === 0) throw new Error("Sesi tidak ditemukan");
 
   const currentSession = sessionRecord[0];
-  
+
   // Calculate original duration in ms, default to 2 hours if invalid
   let duration = currentSession.endTime.getTime() - currentSession.startTime.getTime();
   if (duration <= 0) duration = 2 * 60 * 60 * 1000;
@@ -152,32 +146,31 @@ export async function startSessionNow(id: number) {
     duration = MIN_DURATION;
   }
 
-  const newEndTime = new Date(now.getTime() + duration);
-
+  // startTime=sekarang (jam server DB), endTime=sekarang+durasi.
   await db.update(vote_sessions)
-    .set({ startTime: now, endTime: newEndTime })
+    .set({
+      startTime: sql`CURRENT_TIMESTAMP`,
+      endTime: sql`CURRENT_TIMESTAMP + (${duration} * INTERVAL '1 millisecond')`,
+    })
     .where(eq(vote_sessions.id, id));
 
-  revalidatePath("/", "layout");
+  revalidateAll();
 }
 
 export async function endSessionNow(id: number) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  await requireUser();
 
-  const now = new Date();
   await db.update(vote_sessions)
-    .set({ endTime: now })
+    .set({ endTime: sql`CURRENT_TIMESTAMP` })
     .where(eq(vote_sessions.id, id));
 
-  revalidatePath("/", "layout");
+  revalidateAll();
 }
 
 export async function resetSessionVotes(id: number) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  await requireUser();
 
   await db.delete(votes).where(eq(votes.sessionId, id));
 
-  revalidatePath("/", "layout");
+  revalidateAll();
 }

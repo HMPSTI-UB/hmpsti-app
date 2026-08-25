@@ -1,7 +1,7 @@
 "use server"
 
 import { v2 as cloudinary } from 'cloudinary';
-import { auth } from "@/auth";
+import { requireUser } from "./_guards";
 
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -10,8 +10,7 @@ cloudinary.config({
 });
 
 export async function uploadImage(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  await requireUser();
 
   const file = formData.get('file') as File;
   if (!file) throw new Error("No file provided");
