@@ -62,19 +62,19 @@ function MerchContent() {
           style={{ backgroundImage: DEPARTMENT_NOISE_TEXTURE }}
         />
 
-        <div className="relative z-10 w-full max-w-[1400px] mx-auto px-4 md:px-8 pt-28 md:pt-32">
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 pt-28 md:pt-32">
           
           {/* TOP NAV/ISLAND (Search + Cart) */}
           <FadeIn delay={0.1} y={-20} className="w-full flex justify-center mb-8 md:mb-12 relative z-50">
             <div className="w-[90%] max-w-[500px]">
               {/* Double-Bezel Outer Shell */}
-              <div className="p-1.5 bg-white/[0.02] border border-white/5 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-[1.02]">
+              <div className="p-1.5 bg-white/[0.02] border border-white/5 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
                 {/* Inner Core */}
                 <div className="flex items-center gap-2 bg-[#050505]/80 rounded-[calc(9999px-0.375rem)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] px-4 py-2 relative">
                   <Search size={16} className="text-gray-500" />
                   <input
                     type="text"
-                    placeholder="Search collection..."
+                    placeholder="Cari Produk..."
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -94,7 +94,7 @@ function MerchContent() {
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           exit={{ scale: 0 }}
-                          className="absolute -top-1 -right-1 bg-[#33A5D3] text-black text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center"
+                          className="absolute -top-1 -right-1 bg-[#33A5D3] text-black text-[10px] font-bold w-[18px] h-[18px] rounded-full flex items-center justify-center leading-none"
                         >
                           {totalItems}
                         </motion.span>

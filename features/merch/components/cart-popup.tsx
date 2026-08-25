@@ -42,11 +42,11 @@ export function CartPopup({
       {isOpen && (
         <motion.div
           ref={popupRef}
-          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+          initial={{ opacity: 0, x: -10, scale: 0.95 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: -10, scale: 0.95 }}
           transition={{ duration: 0.2 }}
-          className="absolute right-0 top-full mt-2 w-87 bg-[#1A1A1A] rounded-lg shadow-2xl border border-white/10 overflow-hidden z-50 text-white"
+          className="absolute left-full ml-4 top-0 w-80 sm:w-[350px] bg-[#1A1A1A] rounded-lg shadow-2xl border border-white/10 overflow-hidden z-[100] text-white"
         >
           {/* Header */}
           <div className="p-4 border-b border-white/10 text-center">

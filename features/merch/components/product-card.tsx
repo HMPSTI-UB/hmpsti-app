@@ -50,26 +50,19 @@ export function ProductCard({
             <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent opacity-80 pointer-events-none" />
           </Link>
 
-          {/* CONTENT AREA */}
           <div className="flex-1 flex flex-col justify-start p-5 md:p-6 relative z-10 bg-[#0A0A0A]">
             <div className="flex flex-col h-full">
               <Link href={`/merch/${product.id}`} className="block w-fit">
-                <h3 className={cn(
-                  "font-medium tracking-tight text-white transition-colors duration-500 group-hover:text-[#33A5D3]",
-                  isLarge ? "text-2xl md:text-3xl" : "text-xl"
-                )}>
+                <h3 className="font-medium tracking-tight text-white transition-colors duration-500 group-hover:text-[#33A5D3] text-xl md:text-2xl">
                   {product.name}
                 </h3>
               </Link>
               
               <div className="flex items-end justify-between mt-auto">
-              <span className={cn(
-                "font-bold text-white tracking-wide",
-                isLarge ? "text-xl md:text-2xl" : "text-base md:text-lg"
-              )}>
-                Rp {product.price.toLocaleString("id-ID")}
-              </span>
-            </div>
+                <span className="font-bold text-white tracking-wide text-lg md:text-xl">
+                  Rp {product.price.toLocaleString("id-ID")}
+                </span>
+              </div>
             </div>
           </div>
         </div>

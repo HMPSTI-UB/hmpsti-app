@@ -8,10 +8,10 @@ import { useRouter } from "next/navigation";
 import React, { useRef } from "react";
 
 const BANKS = [
-  { id: "bca", name: "BCA", acc: "2353748545", logo: "BCA" },
-  { id: "mandiri", name: "Mandiri", acc: "2353748545", logo: "Mandiri" },
-  { id: "bni", name: "BNI", acc: "2353748545", logo: "BNI" },
-  { id: "bri", name: "BRI", acc: "2353748545", logo: "BRI" },
+  { id: "bca", name: "BCA", acc: "2353748545", logo: "/bca.webp" },
+  { id: "mandiri", name: "Mandiri", acc: "2353748545", logo: "/mandiri.webp" },
+  { id: "bni", name: "BNI", acc: "2353748545", logo: "/bni.webp" },
+  { id: "bri", name: "BRI", acc: "2353748545", logo: "/bri.webp" },
 ];
 
 export default function Checkout() {
@@ -194,12 +194,14 @@ export default function Checkout() {
                         : "border-white/10 bg-[#1A1A1A] hover:border-white/20"
                     }`}
                   >
-                    <div className="w-12 h-8 bg-white rounded flex items-center justify-center text-black font-bold text-xs">
-                      {bank.logo}
+                    <div className="w-14 h-9 bg-white rounded flex items-center justify-center overflow-hidden shrink-0">
+                      <img src={bank.logo} alt={bank.name} className="w-full h-full object-contain p-1" />
                     </div>
                     <div className="flex-1">
                       <p className="font-bold text-sm">{bank.name}</p>
-                      <p className="text-xs text-gray-400 font-mono">{bank.acc}</p>
+                      <p className="text-xs text-gray-400 font-mono mt-0.5">
+                        {bank.acc} <span className="font-sans text-[10px] ml-1 opacity-70">a.n. Jonathan Winner</span>
+                      </p>
                     </div>
                     {selectedBank === bank.id && (
                       <Check className="text-[#33A5D3]" size={18} />
