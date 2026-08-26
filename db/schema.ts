@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, varchar, pgEnum, serial, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, varchar, pgEnum, serial, integer, boolean } from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum('role', ['admin', 'user']);
 
@@ -38,4 +38,34 @@ export const votes = pgTable("votes", {
   voterName: varchar("voter_name", { length: 255 }),
   message: text("message"),
   votedAt: timestamp("voted_at", { mode: 'date' }).defaultNow().notNull(),
+});
+
+export const availabilityTypeEnum = pgEnum('availability_type', ['ready', 'out_of_stock', 'preorder']);
+
+export const merch_categories = pgTable("merch_categories", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).unique().notNull(),
+  createdAt: timestamp("created_at", { mode: 'date' }).defaultNow().notNull(),
+});
+
+export const merch_products = pgTable("merch_products", {
+  id: serial("id").primaryKey(),
+  categoryId: integer("category_id").references(() => merch_categories.id, { onDelete: "set null" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  price: integer("price").notNull(),
+  image: text("image").notNull(),
+  hasSizes: boolean("has_sizes").default(false).notNull(),
+  stock: integer("stock"),
+  availabilityType: availabilityTypeEnum("availability_type").notNull(),
+  createdAt: timestamp("created_at", { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: 'date' }).defaultNow().notNull(),
+});
+
+export const merch_product_sizes = pgTable("merch_product_sizes", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").references(() => merch_products.id, { onDelete: "cascade" }).notNull(),
+  sizeName: varchar("size_name", { length: 50 }).notNull(),
+  stock: integer("stock").notNull(),
 });
