@@ -35,7 +35,7 @@ export async function createCategory(data: CategoryFormData) {
     await db.insert(merch_categories).values(data);
   } catch (error: any) {
     if (error.cause?.code === "23505") {
-      return { error: "Kategori dengan slug tersebut sudah ada." };
+      return { error: "Kategori dengan nama tersebut sudah ada." };
     }
     return { error: "Terjadi kesalahan saat menambahkan kategori." };
   }
@@ -52,7 +52,7 @@ export async function updateCategory(id: number, data: CategoryFormData) {
       .where(eq(merch_categories.id, id));
   } catch (error: any) {
     if (error.cause?.code === "23505") {
-      return { error: "Kategori dengan slug tersebut sudah ada." };
+      return { error: "Kategori dengan nama tersebut sudah ada." };
     }
     return { error: "Terjadi kesalahan saat memperbarui kategori." };
   }

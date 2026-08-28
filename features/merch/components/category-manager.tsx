@@ -158,7 +158,9 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-gray-300">Nama Kategori</Label>
+              <Label htmlFor="name" className="text-gray-300">
+                Nama Kategori <span className="text-gray-500 text-xs font-normal ml-1">(harus unik)</span>
+              </Label>
               <Input 
                 id="name" 
                 required
@@ -169,7 +171,7 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="slug" className="text-gray-300">Slug (URL)</Label>
+              <Label htmlFor="slug" className="text-gray-300">Tipe / Slug Produk (URL)</Label>
               <Input 
                 id="slug" 
                 required
@@ -178,6 +180,9 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
                 className="bg-white/5 border-white/10 text-white focus-visible:ring-[#33A5D3]" 
                 placeholder="misal: kaos"
               />
+              <p className="text-xs text-gray-500">
+                Digunakan untuk mengelompokkan kategori ke tipe yang sama (misal: pakaian, aksesoris). Boleh sama dengan kategori lain.
+              </p>
             </div>
             
             {formError && <p className="text-red-400 text-sm">{formError}</p>}

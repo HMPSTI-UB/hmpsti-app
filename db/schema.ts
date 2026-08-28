@@ -44,8 +44,8 @@ export const availabilityTypeEnum = pgEnum('availability_type', ['ready', 'out_o
 
 export const merch_categories = pgTable("merch_categories", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  slug: varchar("slug", { length: 255 }).unique().notNull(),
+  name: varchar("name", { length: 255 }).unique().notNull(),
+  slug: varchar("slug", { length: 255 }).notNull(),
   createdAt: timestamp("created_at", { mode: 'date' }).defaultNow().notNull(),
 });
 
