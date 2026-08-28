@@ -1,8 +1,8 @@
 # Product Requirements Document (PRD)
 ## Fitur Admin CRUD Merchandise — HMPSTI-UB
 
-**Versi:** Draft 1.1
-**Tanggal:** 25 Agustus 2026 (dibuat) — diperbarui 26 Agustus 2026
+**Versi:** 1.3
+**Tanggal:** 25 Agustus 2026 (dibuat) — diperbarui 28 Agustus 2026
 **Branch:** `feat/merch-crud`
 **Status:** Dalam pengembangan
 
@@ -21,13 +21,15 @@ Berbeda dengan model multi-merchant pada draf PRD "Jelajah Teknologi" sebelumnya
 - Memastikan status ketersediaan produk (`ready`, `out_of_stock`, `preorder`) selalu akurat dan minim campur tangan manual yang rawan human error.
 - Menerapkan pola data-fetching yang sudah terbukti ringan (server-side pagination, query paralel, tanpa N+1 query) sejak awal pengembangan, mengacu pada hasil perbaikan performa Tim IoT.
 - Memungkinkan admin menambah kategori produk baru tanpa perlu perubahan kode/deployment.
+- Menyediakan jejak audit (audit trail) atas aktivitas CRUD admin, agar perubahan data produk/kategori/ukuran dapat ditelusuri.
+- Memungkinkan beberapa kategori berbeda dikelompokkan di bawah satu **tipe/slug** yang sama, agar pembeli dapat memfilter produk secara lebih luas di halaman publik (lihat Bagian 5.1).
 
 ## 3. Aktor dan Hak Akses
 
 | Aktor | Deskripsi | Hak Akses Utama |
 |---|---|---|
-| Guest / Pembeli | Pengunjung halaman publik `/merch` | Melihat katalog, detail produk, filter kategori, search, memilih ukuran & menginput kuantitas preorder |
-| Admin | Pengelola tunggal seluruh produk HMPSTI | Tambah, ubah, hapus produk; kelola kategori; kelola size & kuota acuan per produk |
+| Guest / Pembeli | Pengunjung halaman publik `/merch` | Melihat katalog, detail produk, filter kategori/tipe, search, memilih ukuran & menginput kuantitas preorder |
+| Admin | Pengelola tunggal seluruh produk HMPSTI | Tambah, ubah, hapus produk; kelola kategori; kelola size & kuota acuan per produk; melihat audit trail aktivitas CRUD |
 
 **Catatan:** Tidak ada peran Merchant terpisah. Semua produk dimiliki dan dikelola oleh satu entitas (Admin HMPSTI), berbeda dari model multi-merchant di draf PRD Jelajah Teknologi.
 
@@ -35,29 +37,40 @@ Berbeda dengan model multi-merchant pada draf PRD "Jelajah Teknologi" sebelumnya
 
 ### 4.1 Termasuk dalam scope
 - CRUD produk merchandise (tambah, lihat, ubah, hapus/nonaktifkan).
-- CRUD kategori produk oleh admin (nama & slug), dapat ditambah kapan saja tanpa deployment.
+- CRUD kategori produk oleh admin (nama unik & slug/tipe, dapat dibagi beberapa kategori — lihat Bagian 5.1), dapat ditambah kapan saja tanpa deployment.
 - Dua tipe produk: **berukuran** (dengan daftar size & kuota acuan per size) dan **tanpa ukuran** (dengan stok tunggal).
-- Logika status ketersediaan otomatis dan semi-manual (dijelaskan di Bagian 8).
+- Logika status ketersediaan otomatis dan semi-manual (dijelaskan di Bagian 6).
 - Upload gambar produk memakai komponen `image-upload-field.tsx` yang sudah ada (Cloudinary), reuse dari modul Pameran IoT.
 - Pencarian, filter kategori, dan pagination pada tabel admin — server-side, mengikuti pola `?page=&search=&category=` seperti pada perbaikan modul Tim IoT.
 - Input ukuran pada form admin menggunakan pola **hybrid** (dropdown preset + opsi teks bebas) dan validasi larangan ukuran duplikat dalam satu produk (lihat Bagian 5.3).
+- **Audit trail untuk aktivitas CRUD admin** (tambah/ubah/hapus produk, kategori, ukuran) — ditambahkan setelah UI utama admin selesai. Lihat Bagian 7.8 dan Bagian 15.
 
 ### 4.2 Tidak termasuk dalam scope (Out of Scope)
 - Sistem multi-merchant (banyak penjual).
-- Payment gateway otomatis, checkout, atau alur transaksi (sudah ditangani terpisah di `feat/merch`).
+- **Sistem transaksi/pesanan pembeli** (checkout, penyimpanan data pembeli, upload bukti transfer, status pesanan). Investigasi kode mengonfirmasi bahwa halaman checkout di `feat/merch` saat ini **murni UI/mockup**, belum dibangun sama sekali — menjadi task/PRD terpisah di masa depan.
+- **Audit trail untuk aktivitas pembeli** (checkout, preorder, konfirmasi pembayaran) — bergantung pada sistem transaksi di atas yang belum ada.
 - Varian produk selain ukuran (misal varian warna) — dapat menjadi pengembangan lanjutan.
-- Riwayat perubahan stok/audit trail otomatis.
 - Laporan penjualan/analitik produk.
 - **Implementasi halaman detail produk publik (`/merch/[slug]`)** untuk alur preorder produk berukuran — keputusan desainnya sudah dicatat di Bagian 7.7, tetapi pembangunan UI-nya berada di luar scope pekerjaan server actions & admin CRUD pada dokumen ini.
 
 ## 5. Modul Fitur
 
 ### 5.1 Manajemen Kategori (Admin)
+
 - Melihat daftar kategori yang ada.
 - Menambah kategori baru (nama + slug diisi manual oleh admin).
-- Mengubah nama kategori.
+- Mengubah nama/slug kategori.
 - Menghapus kategori — **dapat dihapus kapan saja**, termasuk saat masih memiliki produk aktif (lihat Bagian 7.5 untuk detail penanganan produk terkait).
 - Kategori dipilih pada form produk melalui **dropdown** (bukan input teks bebas), karena `category_id` merupakan foreign key ke `merch_categories`.
+
+**Revisi model kategori & slug (v1.3, 28 Agustus 2026):**
+
+- **`name` (nama kategori) WAJIB UNIK.** Tidak boleh ada dua kategori dengan nama yang sama persis — ini mencegah kebingungan admin saat memilih kategori di dropdown form produk. Contoh yang **tidak diperbolehkan**: dua kategori bernama "Baju Himpunan".
+- **`slug` TIDAK LAGI UNIK — berfungsi sebagai "tipe/grup produk".** Beberapa kategori yang berbeda (nama berbeda, `id` berbeda) boleh berbagi slug yang sama. Contoh yang **valid**:
+  - Kategori "Gantungan Kunci HMPSTI" (slug: `gantungan`) dan kategori "Gantungan Kunci Vokasi" (slug: `gantungan`) — dua kategori berbeda, sama-sama bertipe `gantungan`.
+  - Kategori "Kaos Logo Vokasi" (slug: `pakaian`) dan kategori "Jaket Angkatan TI" (slug: `pakaian`) — dua kategori berbeda, sama-sama bertipe `pakaian`.
+- **Tujuan desain:** di halaman publik `/merch`, pembeli dapat memfilter produk berdasarkan slug (tipe), dan hasilnya akan menampilkan gabungan produk dari **semua kategori** yang berbagi slug tersebut. Nama kategori tetap berguna sebagai label yang lebih spesifik (misal untuk ditampilkan sebagai sub-label produk atau untuk keperluan admin), sementara slug berfungsi sebagai pengelompokan yang lebih luas.
+- **Identitas unik produk tetap di level `id` produk** (`merch_products.id`), bukan di kategori atau slug — ini yang dipakai untuk mencatat transaksi/pesanan antara admin dan pembeli (di luar scope dokumen ini, lihat Bagian 4.2).
 
 ### 5.2 Manajemen Produk (Admin)
 - Melihat daftar seluruh produk dalam tabel dengan pagination server-side (default 10 data/halaman, opsi 5/10/20/Semua — mengikuti pola Tim IoT).
@@ -134,8 +147,11 @@ Produk berukuran (pakaian, dsb.) memerlukan penyesuaian ukuran pembeli sehingga 
 2b. Admin ingin menandai produk sebagai dapat dipesan meski stok masih kosong → admin memilih opsi manual "Tandai sebagai Pre-order" → status menjadi `preorder` terlepas dari angka stok saat itu.
 
 ### 7.4 Flow Admin — Kelola Kategori
+
 1. Admin membuka halaman Manajemen Kategori.
 2. Admin menambah kategori baru (nama dan slug diisi manual oleh admin).
+   - **Nama kategori divalidasi harus unik** — jika admin memasukkan nama yang sudah dipakai kategori lain, sistem menampilkan pesan error yang jelas (misal "Kategori dengan nama tersebut sudah ada.") dan penyimpanan dibatalkan.
+   - **Slug TIDAK divalidasi harus unik** — admin dapat memasukkan slug yang sama dengan kategori lain yang sudah ada, untuk mengelompokkan beberapa kategori ke dalam satu tipe/grup yang sama (lihat Bagian 5.1).
 3. Kategori baru langsung tersedia sebagai pilihan (dropdown) saat menambah/mengubah produk, tanpa perlu deployment kode.
 
 ### 7.5 Flow Admin — Hapus Kategori yang Masih Memiliki Produk
@@ -162,6 +178,13 @@ Produk berukuran (pakaian, dsb.) memerlukan penyesuaian ukuran pembeli sehingga 
 3. Pembeli **menginput sendiri jumlah barang yang ingin di-preorder** (field kuantitas bebas), **tidak dibatasi otomatis** oleh angka kuota acuan yang diisi admin — kuota tersebut bersifat catatan internal admin, bukan hard limit sistem (lihat penegasan Bagian 5.3).
 4. Tampilan hanya menyediakan **satu tombol aksi: "Preorder"** — **tidak ada** label "Stock: Tersedia" maupun tombol "Checkout" langsung seperti pada referensi desain lama (halaman produk Kabinet Innovara) yang sempat dijadikan pembanding visual namun belum disesuaikan dengan aturan `preorder` pada PRD ini.
 5. Alur ini berbeda dari produk tanpa ukuran (`has_sizes = false`), yang tampilannya dapat menunjukkan status stok riil (`ready`/`out_of_stock`) sesuai Bagian 6.1.
+6. **Catatan tambahan (v1.3):** filter berdasarkan slug/tipe di halaman katalog publik (`/merch`) menampilkan gabungan produk dari seluruh kategori yang berbagi slug yang sama (lihat Bagian 5.1). Identitas unik tiap produk untuk keperluan transaksi tetap mengacu pada `id` produk, bukan kategori/slug.
+
+### 7.8 Flow Admin — Melihat Audit Trail Aktivitas Merch
+1. Admin membuka menu "Audit Log" pada bagian Merch di sidebar.
+2. Sistem menampilkan daftar aktivitas CRUD yang tercatat: waktu, admin pelaku, jenis aksi (CREATE/UPDATE/DELETE), entitas terkait (produk/kategori/ukuran), dan ringkasan pesan (misal "Admin mengubah produk Kaos HMPSTI").
+3. Admin dapat memfilter berdasarkan entitas dan/atau jenis aksi (mengikuti pola UI Log Aktivitas SAMBA-TI sebagai referensi, lihat Bagian 11).
+4. Admin dapat melihat detail lengkap satu entri log (misal data sebelum dan sesudah perubahan, jika disimpan).
 
 ## 8. Data Model
 
@@ -170,14 +193,17 @@ Produk berukuran (pakaian, dsb.) memerlukan penyesuaian ukuran pembeli sehingga 
 | `merch_categories` | Master kategori produk, dapat ditambah admin kapan saja. |
 | `merch_products` | Data utama produk: nama, deskripsi, harga, gambar, kategori, tipe (berukuran/tidak), stok (jika tanpa ukuran), status ketersediaan. |
 | `merch_product_sizes` | Daftar ukuran per produk beserta kuota acuan, hanya relevan untuk produk berukuran. |
+| `merch_audit_logs` | Mencatat aktivitas CRUD admin pada produk, kategori, dan ukuran (tambah/ubah/hapus), untuk keperluan audit trail (lihat Bagian 15 untuk struktur kolom). |
 
 ### 8.1 Detail Kolom (rancangan awal, untuk didiskusikan lebih lanjut sebelum implementasi)
 
 **`merch_categories`**
 - `id`
-- `name` (varchar)
-- `slug` (varchar, unique, diisi manual oleh admin)
+- `name` (varchar, **unique** — direvisi di v1.3, sebelumnya tidak ada constraint unique pada kolom ini)
+- `slug` (varchar, **TIDAK unique** — direvisi di v1.3, sebelumnya unique; sekarang berfungsi sebagai tipe/grup produk yang boleh dipakai bersama oleh beberapa kategori berbeda, lihat Bagian 5.1)
 - `created_at`
+
+> **Catatan migrasi (v1.3):** perubahan constraint ini (drop unique dari `slug`, tambah unique ke `name`) memerlukan migration/schema update terpisah, dan akan menambah pada technical debt migrasi yang sudah dicatat di Bagian 13.1 — perlu dikoordinasikan agar tidak terjadi konflik data (misal jika sudah ada slug yang sempat dianggap unique di data lama, dan/atau ada nama duplikat di data uji yang sudah dibuat sebelumnya, seperti kasus "Baju Himpunan" x2 yang ditemukan saat verifikasi manual Sub-tahap 4A pada 28 Agustus 2026).
 
 **`merch_products`**
 - `id`
@@ -200,6 +226,15 @@ Produk berukuran (pakaian, dsb.) memerlukan penyesuaian ukuran pembeli sehingga 
 - `size_name` (varchar, misal "S", "M", "L", "XL" — **harus unik dalam lingkup satu `product_id` yang sama**, lihat Bagian 5.3 & 12)
 - `stock` (integer — merepresentasikan **kuota acuan** admin, bukan stok fisik maupun hard limit bagi input kuantitas pembeli)
 
+**`merch_audit_logs`** (detail lengkap di Bagian 15.1)
+- `id`
+- `admin_id` (FK → `users.id`)
+- `entity` (varchar: `"product"` | `"category"` | `"product_size"`)
+- `entity_id` (integer, nullable)
+- `action` (enum: `CREATE` | `UPDATE` | `DELETE`)
+- `message` (text)
+- `created_at`
+
 ## 9. Status Ketersediaan (Ringkasan)
 
 | Status | Deskripsi | Berlaku untuk |
@@ -219,22 +254,25 @@ Produk berukuran (pakaian, dsb.) memerlukan penyesuaian ukuran pembeli sehingga 
 - Penghapusan produk menggunakan hard delete. Server action penghapusan produk **wajib** menghapus file gambar terkait di Cloudinary **sebelum** menghapus baris data produk. Jika penghapusan gambar di Cloudinary gagal, seluruh proses hapus produk dibatalkan (rollback) — data produk tetap utuh di database.
 - Penghapusan kategori tidak diblokir oleh keberadaan produk terkait, namun UI **wajib** menampilkan dialog konfirmasi yang menyebutkan jumlah produk terdampak sebelum penghapusan dieksekusi. Server action wajib menangani pelepasan relasi (`category_id` → `NULL`) sebelum/bersamaan dengan proses hapus, agar tidak melanggar foreign key constraint.
 - Server action create/update pada `merch_product_sizes` **wajib** memvalidasi tidak ada `size_name` duplikat dalam satu `product_id` yang sama, sebelum data disimpan.
+- Pencatatan audit log dilakukan di level server action (bukan trigger database) untuk setiap operasi CREATE/UPDATE/DELETE pada produk, kategori, dan ukuran — konsisten dengan prinsip di atas bahwa logika penting ditangani secara eksplisit dan dapat diuji, bukan tersembunyi di level database.
+- **Server action create/update pada `merch_categories` wajib memvalidasi `name` unik** (v1.3) — divalidasi di level aplikasi/database (constraint unique pada kolom `name`), dengan pesan error yang jelas dan ramah ditampilkan ke UI (bukan raw database error), mengikuti pola penanganan error yang sudah diterapkan pada Sub-tahap 4A.
+- **`slug` pada `merch_categories` TIDAK divalidasi unik** (v1.3) — slug boleh sama di beberapa kategori berbeda, karena berfungsi sebagai tipe/grup produk (lihat Bagian 5.1).
+- Penanganan error validasi (termasuk unique constraint violation) pada server actions **wajib** mengembalikan (`return`) objek berisi pesan error yang sudah diformat ramah pengguna, bukan melempar (`throw`) raw error dari driver database — untuk mencegah kebocoran detail teknis (nama tabel/kolom/parameter query) ke UI maupun console browser, sekaligus menghindari respons `500 Internal Server Error` generik yang tidak informatif bagi admin.
 
 ## 11. Out of Scope untuk Rilis Ini
 
 - Varian produk selain ukuran (warna, bahan, dsb.).
 - Sistem multi-merchant/multi-penjual.
-- Payment gateway otomatis (checkout tetap manual, ditangani di modul terpisah).
-- Riwayat/audit trail perubahan stok dan aktivitas CRUD (tambah/ubah/hapus produk, kategori, ukuran), termasuk audit trail untuk konfirmasi pembayaran terkait transaksi merchandise. **Referensi pola untuk pengembangan lanjutan**: project SAMBA-TI-Vokasi telah memiliki modul Log Aktivitas dengan struktur `entity`, `aksi` (CREATE/UPDATE/DELETE), `waktu`, `pesan` (deskriptif, misal "Nama User (Role) mengubah submission"), dan tautan detail. Pola ini dapat dijadikan acuan apabila audit trail dibangun di masa depan, dengan penyesuaian pada entity yang relevan (`produk`, `kategori`, `ukuran`, `pembayaran`).
+- **Sistem transaksi/pesanan pembeli beserta audit trail-nya** (checkout, penyimpanan data pembeli, upload bukti transfer, status pesanan, konfirmasi pembayaran). Ini menjadi task/PRD terpisah di masa depan.
 - Laporan analitik penjualan produk.
 - Notifikasi otomatis saat stok menipis.
 - Indikator/highlight "produk baru" pada katalog publik — dipertimbangkan sebagai pengembangan lanjutan (next scope), belum menjadi bagian rilis ini.
 - **Fitur pemindahan kategori secara massal (bulk re-categorize)** untuk produk-produk yang `category_id`-nya menjadi `NULL` akibat kategori terhapus. Pada rilis ini, produk yang kehilangan kategori diperbaiki satu per satu secara manual melalui form edit produk (dibantu badge "Tanpa Kategori" untuk memudahkan menemukannya). Fitur bulk dicatat di sini sebagai kandidat pengembangan lanjutan apabila jumlah produk bertambah signifikan di kemudian hari — dapat langsung dirujuk tanpa perlu didiskusikan ulang dari awal.
-- **Implementasi/perbaikan halaman detail produk publik (`/merch/[slug]`)**, termasuk alur pemilihan ukuran, input kuantitas preorder, dan tombol aksi "Preorder" untuk produk berukuran. Keputusan desainnya sudah dicatat di Bagian 7.7 agar tidak hilang, namun pembangunan UI publik ini adalah pekerjaan terpisah dari server actions & admin CRUD pada dokumen ini.
+- **Implementasi/perbaikan halaman detail produk publik (`/merch/[slug]`)**, termasuk alur pemilihan ukuran, input kuantitas preorder, filter berdasarkan slug/tipe (lihat Bagian 5.1, 7.7), dan tombol aksi "Preorder" untuk produk berukuran. Keputusan desainnya sudah dicatat di Bagian 7.7 agar tidak hilang, namun pembangunan UI publik ini adalah pekerjaan terpisah dari server actions & admin CRUD pada dokumen ini.
 
 ## 12. Keputusan Desain (Sebelumnya Open Questions)
 
-Poin-poin berikut telah didiskusikan dan diputuskan sebelum implementasi dimulai:
+Poin-poin berikut telah didiskusikan dan diputuskan sebelum/selama implementasi:
 
 | Pertanyaan | Keputusan |
 |---|---|
@@ -254,7 +292,11 @@ Poin-poin berikut telah didiskusikan dan diputuskan sebelum implementasi dimulai
 | Mekanisme input ukuran pada form admin — teks bebas polos atau ada bantuan preset? | **Hybrid.** Dropdown berisi preset umum (`S`/`M`/`L`/`XL`/`XXL`) + opsi **"Lainnya..."** yang membuka input teks bebas untuk ukuran non-standar. Nilai tetap tersimpan sebagai teks bebas di database — tidak mengubah sifat "tidak dibatasi" pada baris di atas, hanya meningkatkan efisiensi UX input. |
 | Boleh ada `size_name` duplikat dalam satu produk yang sama (misal dua baris "L")? | **Tidak boleh.** Divalidasi di server action (wajib) dan direkomendasikan dicegah juga di UI (disable opsi yang sudah dipakai pada dropdown baris lain). |
 | Kuota (`stock`) pada `merch_product_sizes` bersifat hard limit bagi kuantitas preorder pembeli? | **Tidak.** Bersifat acuan/catatan internal admin saja (misal estimasi kapasitas produksi). Pembeli menginput kuantitas preorder secara bebas di halaman publik (lihat Bagian 7.7), tidak dibatasi otomatis oleh angka ini. |
-| Tampilan halaman publik produk berukuran — status stok + checkout langsung, atau preorder saja? | **Preorder saja.** Satu tombol aksi "Preorder", tanpa label status stok maupun tombol checkout langsung. Berbeda dari referensi desain lama (Kabinet Innovara) yang belum disesuaikan dengan aturan `preorder` di PRD ini (lihat Bagian 7.7). Implementasi UI-nya di luar scope dokumen ini (lihat Bagian 4.2 & 11). |
+| Tampilan halaman publik produk berukuran — status stok + checkout langsung, atau preorder saja? | **Preorder saja.** Satu tombol aksi "Preorder", tanpa label status stok maupun tombol checkout langsung. Implementasi UI-nya di luar scope dokumen ini (lihat Bagian 4.2 & 11). |
+| Audit trail aktivitas CRUD admin — termasuk scope atau tidak? | **Termasuk scope rilis ini.** Dikerjakan setelah UI utama, sidebar, verifikasi, dan technical debt migrasi selesai — sebelum walkthrough akhir & PR (lihat Bagian 15 untuk roadmap tahapan). |
+| Audit trail aktivitas pembeli (checkout/preorder) — termasuk scope? | **Tidak termasuk.** Bergantung pada sistem transaksi pembeli yang belum dibangun sama sekali. Akan menjadi task/PRD terpisah di masa depan. |
+| **(v1.3)** Kolom `name` pada `merch_categories` — perlu unik atau boleh duplikat? | **Wajib unik.** Ditemukan saat verifikasi manual (28 Agustus 2026) bahwa dua kategori bisa punya nama identik ("Baju Himpunan" x2) karena constraint unique sebelumnya hanya ada di `slug`. Ini membingungkan admin saat memilih dropdown kategori di form produk — direvisi jadi wajib unik. |
+| **(v1.3)** Kolom `slug` pada `merch_categories` — tetap unik atau boleh dipakai beberapa kategori? | **Tidak lagi unik — boleh dipakai beberapa kategori berbeda.** Slug direvisi fungsinya menjadi "tipe/grup produk" (misal `gantungan`, `pakaian`) yang dapat dibagi oleh beberapa kategori dengan nama berbeda (misal "Gantungan HMPSTI" dan "Gantungan Kunci Vokasi" sama-sama bertipe `gantungan`). Tujuannya agar pembeli dapat memfilter produk secara lebih luas di halaman publik berdasarkan tipe, sementara nama kategori tetap spesifik. Identitas unik produk untuk transaksi tetap di level `id` produk, bukan kategori/slug. Lihat Bagian 5.1. |
 
 ## 13. Open Questions (Tersisa)
 
@@ -266,6 +308,7 @@ Tidak ada pertanyaan terbuka tersisa saat ini. Bagian ini akan diperbarui apabil
   - **Dampak saat ini:** Tidak ada, karena masih di lingkungan development lokal.
   - **Risiko ke depan:** Percobaan `drizzle-kit migrate` berikutnya kemungkinan akan mengalami error yang sama sampai riwayat migrasi disinkronkan (misal melalui `drizzle-kit migrate --baseline` atau pendekatan serupa).
   - **Tindak lanjut:** Perlu diselesaikan sebelum Pull Request `feat/merch-crud` diajukan ke `dev`, agar riwayat migrasi tetap konsisten untuk anggota tim lain yang melakukan `git pull`.
+- **(Baru, v1.3) Perubahan constraint kolom `merch_categories`** — drop `unique` dari `slug`, tambah `unique` pada `name` (lihat Bagian 8.1, 12). Karena skema saat ini diterapkan lewat `drizzle-kit push` (bukan `generate`+`migrate`, sesuai poin di atas), perubahan ini kemungkinan juga akan diterapkan lewat `push` untuk sementara di lingkungan development lokal — menambah cakupan yang perlu disinkronkan saat technical debt migrasi di atas diselesaikan sebelum PR ke `dev`. Perlu dipastikan juga tidak ada data uji coba di database lokal yang melanggar constraint baru (nama kategori duplikat) sebelum constraint unique pada `name` diterapkan.
 
 ## 14. Aturan Kerja (Development Workflow)
 
@@ -305,12 +348,71 @@ Jika salah satu langkah gagal, perbaikan dilakukan terlebih dahulu sebelum melan
 - Branch kerja dibuat dari `dev` yang sudah diperbarui (`git pull origin dev`) sebelum memulai task baru, bukan dari branch fitur lama yang berpotensi kedaluwarsa.
 - Staging perubahan (`git add`) dilakukan secara eksplisit per file yang relevan — **hindari** `git add .` tanpa pengecekan `git status` terlebih dahulu, untuk mencegah file yang tidak diinginkan (misal konfigurasi lokal agent) ikut ter-commit.
 - File/folder yang bersifat konfigurasi lokal (bukan bagian dari kode aplikasi) didaftarkan pada `.gitignore`, bukan di-commit lalu diabaikan secara manual berulang kali.
-- Pesan commit mengikuti konvensi [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `perf:`, `refactor:`, `chore:`, dst.) agar riwayat commit mudah dipahami tanpa membuka diff.
+- Pesan commit mengikuti konvensi [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `perf:`, `refactor:`, `chore:`, dst.), **ditulis dalam Bahasa Indonesia**, agar riwayat commit mudah dipahami tanpa membuka diff.
 - Perubahan besar (skema database, server action inti, halaman baru) diajukan melalui Pull Request ke `dev` — **bukan** langsung ke `main` — untuk memberi ruang review sebelum masuk ke branch yang terhubung dengan deployment production.
+
+### 14.6 Protokol Referensi PRD untuk Setiap Task Baru
+- Sebelum menyusun Implementation Plan untuk task apa pun terkait fitur ini, sebutkan secara eksplisit bagian PRD mana saja yang relevan dengan task tersebut.
+- Pastikan Implementation Plan yang disusun tidak bertentangan dengan keputusan yang sudah tertulis di Bagian 12.
+- Jika task yang diminta ternyata belum diatur/tidak jelas di PRD, tanyakan terlebih dahulu alih-alih membuat asumsi sendiri, dan catat sebagai kandidat entri baru di Bagian 12 atau Bagian 13.
 
 ---
 
-## 15. Referensi Teknis
+## 15. Audit Trail Aktivitas Admin & Roadmap Tahapan `feat/merch-crud`
+
+### 15.1 Struktur Tabel Audit Log
+
+**`merch_audit_logs`**
+- `id`
+- `admin_id` (FK → `users.id` — pelaku aksi)
+- `entity` (varchar, misal `"product"`, `"category"`, `"product_size"`)
+- `entity_id` (integer — ID baris yang terdampak, nullable jika entitas sudah terhapus)
+- `action` (enum: `CREATE` | `UPDATE` | `DELETE`)
+- `message` (text — ringkasan deskriptif, misal "Admin mengubah produk Kaos HMPSTI")
+- `created_at`
+
+Struktur ini mengacu pada pola modul Log Aktivitas SAMBA-TI-Vokasi (kolom `entity`, `aksi`, `waktu`, `pesan`, tautan detail), disesuaikan dengan entitas yang relevan untuk Merch (`product`, `category`, `product_size`).
+
+### 15.2 Cakupan Pencatatan
+Audit log mencatat setiap operasi CREATE/UPDATE/DELETE yang dilakukan admin melalui server action pada:
+- Produk (`merch_products`)
+- Kategori (`merch_categories`)
+- Ukuran produk (`merch_product_sizes`)
+
+Pencatatan dilakukan di level server action (bukan trigger database), konsisten dengan prinsip Bagian 10.
+
+### 15.3 Tampilan Admin
+Sesuai flow Bagian 7.8 — halaman terpisah menampilkan daftar log dengan filter entitas dan jenis aksi, mengikuti gaya UI Log Aktivitas SAMBA-TI. Menu diakses melalui sidebar (lihat Bagian 15.5 untuk penempatan).
+
+### 15.4 Roadmap Tahapan (Urutan Pengerjaan `feat/merch-crud`)
+
+Status per 28 Agustus 2026:
+
+| Tahap | Deskripsi | Status |
+|---|---|---|
+| 1 | PRD final | ✅ Selesai |
+| 2 | Skema database (`merch_categories`, `merch_products`, `merch_product_sizes`) + migration | ✅ Selesai (perlu penyesuaian constraint, lihat Bagian 13.1) |
+| 3 | Server actions CRUD (kategori, produk, ukuran) | ✅ Selesai (perlu penyesuaian validasi kategori, lihat di bawah) |
+| 4A | Halaman Kategori (tabel, form, dialog hapus dengan impact counter) | 🔧 Selesai, sedang direvisi ulang untuk penyesuaian unique name / non-unique slug (v1.3) |
+| 4B | Halaman Produk (tabel, form dengan toggle ukuran) | ⬜ Belum |
+| 4C | Integrasi Ukuran ke Form Produk | ⬜ Belum |
+| 5 | Sidebar — tambah menu "Merch" ke `SidebarNav.tsx` | ⬜ Belum |
+| 6 | Verifikasi manual di localhost (seluruh skenario CRUD dua tipe produk) | ⬜ Belum |
+| 7 | Selesaikan technical debt migrasi (Bagian 13.1) — wajib sebelum PR | ⬜ Belum |
+| 8 | **Audit trail admin**: skema `merch_audit_logs`, integrasi pencatatan ke seluruh server action CRUD (Tahap 3), halaman tampilan log (Bagian 15.3) | ⬜ Belum |
+| 9 | Sidebar — tambah menu "Audit Log" (lihat Bagian 15.5) | ⬜ Belum |
+| 10 | Walkthrough akhir lengkap + Pull Request `feat/merch-crud` → `dev` | ⬜ Belum |
+
+**Catatan urutan**: Tahap 8 (audit trail) sengaja dikerjakan setelah Tahap 4-7, karena audit trail bergantung pada server action CRUD yang stabil dan sebaiknya tidak menambah kompleksitas saat UI utama (Tahap 4) masih dalam proses. Menu sidebar untuk audit log (Tahap 9) menyusul setelah halaman audit trail selesai, mengikuti pola yang sama dengan Tahap 5 (sidebar Merch ditambahkan setelah halamannya jadi, untuk menghindari broken link).
+
+### 15.5 Penempatan Menu Sidebar
+- Menu **"Merch"** ditambahkan ke `SidebarNav.tsx` pada Tahap 5, di bagian sesuai grouping section yang relevan (menyesuaikan pola grouping yang sudah ada, misal "PAMERAN IOT").
+- Menu **"Audit Log"** (bagian dari Merch) ditambahkan pada Tahap 9, diposisikan di **bagian paling bawah, sebelum menu "Pengaturan"**.
+
+### 15.6 Pertimbangan Risiko Waktu
+Target penyelesaian branch ini pada awalnya diperkirakan sekitar satu minggu sejak 25 Agustus 2026, namun **ini hanya perkiraan kasar, bukan tenggat waktu yang mengikat** (dikonfirmasi 28 Agustus 2026). Penambahan cakupan kerja (audit trail Tahap 8-9, revisi model kategori v1.3) boleh memperpanjang waktu pengerjaan tanpa masalah, selama kualitas dan proses verifikasi tetap dijaga sesuai Bagian 14. Jika suatu saat diperlukan, opsi mitigasi tetap tersedia: audit trail dapat dipecah menjadi PR terpisah yang menyusul setelah Tahap 4-7 di-PR dan di-merge ke `dev` lebih dulu.
+
+## 16. Referensi Teknis
 
 Implementasi mengacu pada pola yang telah diverifikasi bekerja dengan baik pada perbaikan performa modul Tim IoT (branch `fix/pameran-iot`, merged ke `dev` pada 25 Agustus 2026):
 - `features/pameran-iot/actions/team-actions.ts` — pola query dengan pagination server-side.
@@ -319,12 +421,14 @@ Implementasi mengacu pada pola yang telah diverifikasi bekerja dengan baik pada 
 
 ---
 
-## 16. Riwayat Perubahan Dokumen
+## 17. Riwayat Perubahan Dokumen
 
 | Versi | Tanggal | Perubahan |
 |---|---|---|
 | 1.0 | 25 Agustus 2026 | Draft awal PRD. |
-| 1.1 | 26 Agustus 2026 | Menambahkan keputusan desain: (1) kategori dipilih via dropdown pada form produk (Bagian 5.1, 12); (2) input ukuran pada form admin memakai pola hybrid dropdown+teks bebas (Bagian 5.3, 12); (3) validasi larangan `size_name` duplikat dalam satu produk (Bagian 5.3, 10, 12); (4) penegasan bahwa kuota pada `merch_product_sizes` bukan hard limit bagi kuantitas preorder pembeli (Bagian 5.3, 12); (5) catatan alur & tampilan halaman publik untuk preorder produk berukuran, di luar scope implementasi saat ini (Bagian 7.7, 4.2, 11, 12). |
+| 1.1 | 26 Agustus 2026 | Menambahkan keputusan desain: (1) kategori dipilih via dropdown pada form produk; (2) input ukuran pada form admin memakai pola hybrid dropdown+teks bebas; (3) validasi larangan `size_name` duplikat dalam satu produk; (4) penegasan bahwa kuota pada `merch_product_sizes` bukan hard limit bagi kuantitas preorder pembeli; (5) catatan alur & tampilan halaman publik untuk preorder produk berukuran, di luar scope implementasi saat ini. |
+| 1.2 | 26 Agustus 2026 | (1) Audit trail aktivitas CRUD admin dipindahkan ke dalam scope rilis ini; (2) Koreksi asumsi keliru bahwa sistem checkout "sudah ditangani terpisah" — ternyata murni UI/mockup; (3) Audit trail aktivitas pembeli tetap di luar scope; (4) Menambahkan roadmap tahapan resmi `feat/merch-crud` beserta penempatan menu sidebar "Audit Log"; (5) Menambahkan protokol referensi PRD untuk task baru (Bagian 14.6). |
+| **1.3** | **28 Agustus 2026** | **Revisi model kategori & slug**, ditemukan saat verifikasi manual Sub-tahap 4A: (1) **`name` kategori sekarang wajib unik** (sebelumnya tidak ada constraint, ditemukan bug dua kategori "Baju Himpunan" bisa tersimpan berdampingan); (2) **`slug` kategori TIDAK LAGI unik** — direvisi fungsinya menjadi tipe/grup produk yang dapat dibagi oleh beberapa kategori berbeda, agar pembeli dapat memfilter produk secara lebih luas berdasarkan tipe di halaman publik; identitas unik produk untuk transaksi tetap di level `id` produk (lihat Bagian 5.1, 7.4, 8.1, 10, 12, 13.1); (3) Memperbarui roadmap tahapan (Bagian 15.4) untuk mencerminkan status terkini Sub-tahap 4A yang sedang direvisi ulang; (4) Mencatat bahwa target waktu 1 minggu bersifat perkiraan longgar, bukan tenggat mengikat (Bagian 15.6); (5) Mendokumentasikan pola penanganan error validasi (return object berisi pesan ramah, bukan throw raw error) sebagai standar wajib untuk seluruh server actions modul ini (Bagian 10), berdasarkan perbaikan bug penanganan error slug duplikat pada Sub-tahap 4A. |
 
 ---
 
