@@ -31,7 +31,14 @@ export async function getCategoryImpact(id: number): Promise<number> {
 export async function createCategory(data: CategoryFormData) {
   await requireUser();
   
-  await db.insert(merch_categories).values(data);
+  try {
+    await db.insert(merch_categories).values(data);
+  } catch (error: any) {
+    if (error.cause?.code === "23505") {
+      return { error: "Kategori dengan slug tersebut sudah ada." };
+    }
+    return { error: "Terjadi kesalahan saat menambahkan kategori." };
+  }
   
   revalidateAll();
 }
@@ -39,9 +46,16 @@ export async function createCategory(data: CategoryFormData) {
 export async function updateCategory(id: number, data: CategoryFormData) {
   await requireUser();
   
-  await db.update(merch_categories)
-    .set(data)
-    .where(eq(merch_categories.id, id));
+  try {
+    await db.update(merch_categories)
+      .set(data)
+      .where(eq(merch_categories.id, id));
+  } catch (error: any) {
+    if (error.cause?.code === "23505") {
+      return { error: "Kategori dengan slug tersebut sudah ada." };
+    }
+    return { error: "Terjadi kesalahan saat memperbarui kategori." };
+  }
     
   revalidateAll();
 }
@@ -49,9 +63,13 @@ export async function updateCategory(id: number, data: CategoryFormData) {
 export async function deleteCategory(id: number) {
   await requireUser();
   
-  // Hard delete kategori. Sesuai skema database (onDelete: "set null"),
-  // relasi category_id di merch_products akan otomatis di-set menjadi NULL oleh PostgreSQL.
-  await db.delete(merch_categories).where(eq(merch_categories.id, id));
+  try {
+    // Hard delete kategori. Sesuai skema database (onDelete: "set null"),
+    // relasi category_id di merch_products akan otomatis di-set menjadi NULL oleh PostgreSQL.
+    await db.delete(merch_categories).where(eq(merch_categories.id, id));
+  } catch {
+    return { error: "Terjadi kesalahan saat menghapus kategori." };
+  }
   
   revalidateAll();
 }
