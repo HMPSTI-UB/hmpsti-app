@@ -16,7 +16,7 @@ export type ProductFormData = {
   name: string;
   description: string | null;
   price: number;
-  image: string;
+  images: string[];
   hasSizes: boolean;
   stock: number | null;
   forcePreorder?: boolean;
