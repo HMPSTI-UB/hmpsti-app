@@ -83,26 +83,19 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
-        <div className="bg-white/5 border border-white/10 p-6 rounded-2xl opacity-75 grayscale hover:grayscale-0 transition-all group relative overflow-hidden">
+        <div className="bg-white/5 border border-white/10 p-6 rounded-2xl hover:bg-white/10 transition-all group">
           <div className="flex justify-between items-start">
             <div>
               <h3 className="text-gray-400 text-sm font-medium">Total Produk</h3>
-              <div className="mt-2 flex flex-col">
-                <p className="text-xl font-bold text-gray-500 italic">Coming Soon</p>
-                <div className="flex items-center gap-1.5 mt-1 text-xs text-orange-400">
-                  Fitur Merch
-                </div>
-              </div>
+              <p className="text-4xl font-bold mt-2 text-white">{stats.totalProducts}</p>
             </div>
             <div className="p-3 bg-orange-500/10 rounded-xl group-hover:bg-orange-500/20 transition-colors">
               <ShoppingBag className="h-6 w-6 text-orange-400" />
             </div>
           </div>
-          <div className="absolute top-2 right-2">
-            <Badge variant="outline" className="text-[10px] py-0 px-1.5 bg-orange-500/10 text-orange-400 border-orange-500/20">
-              Future
-            </Badge>
-          </div>
+          <Link href="/dashboard/merch/products" className="inline-flex items-center text-xs text-orange-400 mt-4 hover:underline">
+            Kelola produk <ArrowRight className="h-3 w-3 ml-1" />
+          </Link>
         </div>
       </div>
 
