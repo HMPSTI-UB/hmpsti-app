@@ -20,12 +20,12 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { createProduct, updateProduct, deleteProduct } from "../actions/product-actions";
+import { createProduct, updateProduct, deleteProduct, getProductSizes } from "../actions/product-actions";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/handle-action";
 import { PaginationBar } from "@/features/pameran-iot/components/pagination-bar";
 import { uploadImage } from "@/features/pameran-iot/actions/upload-action";
-import type { ProductFormData } from "../types";
+import type { ProductFormData, SizeFormData } from "../types";
 
 type AdminProduct = {
   id: number;
@@ -66,7 +66,10 @@ const emptyForm = (): ProductFormData => ({
   hasSizes: false,
   stock: 0,
   forcePreorder: false,
+  sizes: [],
 });
+
+const PRESET_SIZES = ["S", "M", "L", "XL", "XXL"];
 
 export function ProductManager({
   initialProducts,
@@ -115,7 +118,17 @@ export function ProductManager({
     router.push(buildUrl(updates));
   }, [router, buildUrl]);
 
-  const handleOpenDialog = (product?: AdminProduct) => {
+  const [isFetchingSizes, setIsFetchingSizes] = useState(false);
+
+  const sortSizes = (sizes: SizeFormData[]) => {
+    return [...sizes].sort((a, b) => {
+      if (!a.sizeName && b.sizeName) return 1;
+      if (a.sizeName && !b.sizeName) return -1;
+      return 0;
+    });
+  };
+
+  const handleOpenDialog = async (product?: AdminProduct) => {
     setError(null);
     if (product) {
       setEditingProduct(product);
@@ -128,12 +141,31 @@ export function ProductManager({
         hasSizes: product.hasSizes,
         stock: product.stock,
         forcePreorder: product.availabilityType === "preorder" && !product.hasSizes,
+        sizes: [],
       });
+      setIsDialogOpen(true);
+
+      if (product.hasSizes) {
+        setIsFetchingSizes(true);
+        try {
+          const fetchedSizes = await getProductSizes(product.id);
+          const mappedSizes = fetchedSizes.map(s => ({
+            ...s,
+            _id: Math.random().toString(36).substring(2, 9),
+            _isCustom: !PRESET_SIZES.includes(s.sizeName),
+          }));
+          setFormData(prev => ({ ...prev, sizes: sortSizes(mappedSizes) }));
+        } catch (e) {
+          setError("Gagal mengambil ukuran produk.");
+        } finally {
+          setIsFetchingSizes(false);
+        }
+      }
     } else {
       setEditingProduct(null);
       setFormData(emptyForm());
+      setIsDialogOpen(true);
     }
-    setIsDialogOpen(true);
   };
 
   const handleUpload = async (file: File) => {
@@ -169,6 +201,24 @@ export function ProductManager({
     if (formData.images.length < 2 || formData.images.length > 4) {
       setError("Produk harus memiliki minimal 2 dan maksimal 4 gambar.");
       return;
+    }
+
+    if (formData.hasSizes) {
+      const currentSizes = formData.sizes || [];
+      if (currentSizes.length === 0) {
+        setError("Silakan tambahkan minimal 1 ukuran.");
+        return;
+      }
+      const names = currentSizes.map(s => s.sizeName.trim().toLowerCase());
+      if (names.some(n => n === "")) {
+        setError("Terdapat nama ukuran yang masih kosong.");
+        return;
+      }
+      const unique = new Set(names);
+      if (unique.size !== names.length) {
+        setError("Terdapat nama ukuran yang duplikat.");
+        return;
+      }
     }
 
     startTransition(async () => {
@@ -494,11 +544,120 @@ export function ProductManager({
                   </div>
                 </div>
               ) : (
-                <div className="p-4 bg-blue-900/10 border border-blue-500/20 rounded-md">
+                <div className="p-4 bg-blue-900/10 border border-blue-500/20 rounded-md space-y-4">
                   <p className="text-sm text-blue-400 flex items-start gap-2">
                     <SwitchCamera className="w-4 h-4 mt-0.5 shrink-0" />
-                    Manajemen ukuran spesifik (S, M, L, dll) dan stok masing-masing akan dikelola secara detail setelah Anda menyimpan produk ini. Produk akan berstatus Pre-order secara otomatis.
+                    Produk berstatus Pre-order secara otomatis. Kelola ukuran spesifik di bawah ini:
                   </p>
+                  
+                  {isFetchingSizes ? (
+                    <div className="flex justify-center items-center py-4">
+                      <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {(formData.sizes || []).map((size, index) => {
+                        const usedPresets = (formData.sizes || []).map(s => s.sizeName).filter(n => PRESET_SIZES.includes(n));
+                        
+                        return (
+                          <div key={size._id || index} className="flex gap-2 items-start">
+                            <div className="w-1/3">
+                              {size._isCustom ? (
+                                <Input
+                                  autoFocus
+                                  className="bg-white/5 border-white/10 text-white focus-visible:ring-[#33A5D3]"
+                                  placeholder="Ketik ukuran..."
+                                  value={size.sizeName}
+                                  onChange={(e) => {
+                                    const newSizes = [...(formData.sizes || [])];
+                                    newSizes[index].sizeName = e.target.value;
+                                    setFormData(prev => ({ ...prev, sizes: newSizes }));
+                                  }}
+                                  onBlur={() => {
+                                    setFormData(prev => ({ ...prev, sizes: sortSizes(prev.sizes || []) }));
+                                  }}
+                                />
+                              ) : (
+                                <Select
+                                  value={size.sizeName || ""}
+                                  onValueChange={(val) => {
+                                    const newSizes = [...(formData.sizes || [])];
+                                    if (val === "custom") {
+                                      newSizes[index]._isCustom = true;
+                                      newSizes[index].sizeName = "";
+                                    } else {
+                                      newSizes[index]._isCustom = false;
+                                      newSizes[index].sizeName = val;
+                                    }
+                                    setFormData(prev => ({ ...prev, sizes: sortSizes(newSizes) }));
+                                  }}
+                                >
+                                  <SelectTrigger className="bg-white/5 border-white/10 text-white focus:ring-[#33A5D3]">
+                                    <SelectValue placeholder="Pilih..." />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-[#111] border-white/10 text-white">
+                                    {PRESET_SIZES.map(preset => (
+                                      <SelectItem 
+                                        key={preset} 
+                                        value={preset}
+                                        disabled={usedPresets.includes(preset) && size.sizeName !== preset}
+                                      >
+                                        {preset}
+                                      </SelectItem>
+                                    ))}
+                                    <SelectItem value="custom">Lainnya...</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </div>
+                            
+                            <div className="flex-1">
+                              <Input
+                                type="number"
+                                min={0}
+                                placeholder="Masukkan Perkiraan Kuota"
+                                value={size.stock}
+                                onChange={(e) => {
+                                  const newSizes = [...(formData.sizes || [])];
+                                  const val = e.target.value;
+                                  newSizes[index].stock = val === "" ? "" : Number(val);
+                                  setFormData(prev => ({ ...prev, sizes: newSizes }));
+                                }}
+                                className="bg-white/5 border-white/10 text-white focus-visible:ring-[#33A5D3]"
+                              />
+                            </div>
+                            
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                const newSizes = [...(formData.sizes || [])];
+                                newSizes.splice(index, 1);
+                                setFormData(prev => ({ ...prev, sizes: newSizes }));
+                              }}
+                              className="h-10 w-10 shrink-0 text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newSizes = [...(formData.sizes || []), { _id: Math.random().toString(36).substring(2, 9), sizeName: "", stock: "" as const, _isCustom: false }];
+                          setFormData(prev => ({ ...prev, sizes: newSizes }));
+                        }}
+                        className="bg-transparent border-white/20 text-white hover:bg-white/10 mt-2"
+                      >
+                        <Plus className="w-4 h-4 mr-1" /> Tambah Ukuran
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

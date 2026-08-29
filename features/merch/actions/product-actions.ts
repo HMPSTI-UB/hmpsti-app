@@ -110,11 +110,35 @@ export async function getAdminProducts({
   return { products, total };
 }
 
+export async function getProductSizes(productId: number) {
+  await requireUser();
+  const sizes = await db
+    .select({
+      sizeName: merch_product_sizes.sizeName,
+      stock: merch_product_sizes.stock,
+    })
+    .from(merch_product_sizes)
+    .where(eq(merch_product_sizes.productId, productId));
+  
+  return sizes;
+}
+
 export async function createProduct(data: ProductFormData) {
   await requireUser();
 
   if (!data.images || data.images.length < 2 || data.images.length > 4) {
     return { error: "Produk harus memiliki antara 2 hingga 4 gambar." };
+  }
+
+  if (data.hasSizes) {
+    if (!data.sizes || data.sizes.length === 0) {
+      return { error: "Produk dengan ukuran harus memiliki minimal 1 varian ukuran." };
+    }
+    const sizeNames = data.sizes.map((s) => s.sizeName.toLowerCase());
+    const uniqueSizeNames = new Set(sizeNames);
+    if (uniqueSizeNames.size !== sizeNames.length) {
+      return { error: "Terdapat nama ukuran yang duplikat. Nama ukuran harus unik." };
+    }
   }
 
   let insertedProductId: number | null = null;
@@ -142,14 +166,31 @@ export async function createProduct(data: ProductFormData) {
     }));
 
     await db.insert(merch_product_images).values(imageValues);
+
+    if (data.hasSizes && data.sizes) {
+      const sizeValues = data.sizes.map((s) => ({
+        productId: product.id,
+        sizeName: s.sizeName,
+        stock: s.stock === "" ? 0 : s.stock,
+      }));
+      await db.insert(merch_product_sizes).values(sizeValues);
+    }
   } catch (err) {
     if (insertedProductId) {
+      // Rollback: Cloudinary -> Database
+      for (const url of data.images) {
+        try {
+          await deleteImageFromCloudinary(url);
+        } catch (cloudinaryErr) {
+          console.error("Gagal menghapus gambar saat rollback:", cloudinaryErr);
+        }
+      }
       try {
         await db.delete(merch_products).where(eq(merch_products.id, insertedProductId));
       } catch (rollbackErr) {
-        return { error: "Gagal menyimpan gambar DAN gagal membatalkan produk. Terdapat produk tanpa gambar, mohon hapus secara manual." };
+        return { error: "Gagal menyimpan data DAN gagal membatalkan produk. Terdapat produk sisa (orphan), mohon cek manual." };
       }
-      return { error: "Gagal menyimpan gambar. Produk berhasil dibatalkan." };
+      return { error: "Gagal menyimpan ukuran atau gambar. Produk berhasil dibatalkan." };
     }
     return { error: "Terjadi kesalahan saat menambahkan produk." };
   }
@@ -162,6 +203,17 @@ export async function updateProduct(id: number, data: ProductFormData) {
 
   if (!data.images || data.images.length < 2 || data.images.length > 4) {
     return { error: "Produk harus memiliki antara 2 hingga 4 gambar." };
+  }
+
+  if (data.hasSizes) {
+    if (!data.sizes || data.sizes.length === 0) {
+      return { error: "Produk dengan ukuran harus memiliki minimal 1 varian ukuran." };
+    }
+    const sizeNames = data.sizes.map((s) => s.sizeName.toLowerCase());
+    const uniqueSizeNames = new Set(sizeNames);
+    if (uniqueSizeNames.size !== sizeNames.length) {
+      return { error: "Terdapat nama ukuran yang duplikat. Nama ukuran harus unik." };
+    }
   }
 
   try {
@@ -200,11 +252,19 @@ export async function updateProduct(id: number, data: ProductFormData) {
     const deleteOldImagesOp = db.delete(merch_product_images).where(eq(merch_product_images.productId, id));
     const insertNewImagesOp = db.insert(merch_product_images).values(imageValues);
 
+    const deleteSizesOp = db.delete(merch_product_sizes).where(eq(merch_product_sizes.productId, id));
+    
     if (!data.hasSizes) {
-      const deleteSizesOp = db.delete(merch_product_sizes).where(eq(merch_product_sizes.productId, id));
       await db.batch([updateOp, deleteOldImagesOp, insertNewImagesOp, deleteSizesOp]);
     } else {
-      await db.batch([updateOp, deleteOldImagesOp, insertNewImagesOp]);
+      const sizeValues = (data.sizes || []).map((s) => ({
+        productId: id,
+        sizeName: s.sizeName,
+        stock: s.stock === "" ? 0 : s.stock,
+      }));
+      const insertNewSizesOp = db.insert(merch_product_sizes).values(sizeValues);
+      
+      await db.batch([updateOp, deleteOldImagesOp, insertNewImagesOp, deleteSizesOp, insertNewSizesOp]);
     }
   } catch (err) {
     return { error: "Terjadi kesalahan saat memperbarui produk." };
