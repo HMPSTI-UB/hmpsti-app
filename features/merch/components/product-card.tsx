@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import type { MerchProduct } from "@/types/data";
+import type { PublicProduct } from "../types";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +12,7 @@ export function ProductCard({
   index,
   isLarge = false,
 }: {
-  product: MerchProduct;
+  product: PublicProduct;
   index: number;
   isLarge?: boolean;
 }) {
@@ -33,7 +33,7 @@ export function ProductCard({
           {/* IMAGE AREA */}
           <Link href={`/merch/${product.id}`} className="block relative w-full h-[65%] overflow-hidden bg-[#0F0F0F]">
             <img
-              src={product.image}
+              src={product.images?.[0]}
               alt={product.name}
               className="w-full h-full object-cover transition-opacity duration-[700ms] ease-[cubic-bezier(0.32,0.72,0,1)] opacity-80 group-hover:opacity-100 mix-blend-lighten"
             />
@@ -41,7 +41,7 @@ export function ProductCard({
             <div className="absolute top-4 left-4">
               <div className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-xl border border-white/10">
                 <span className="text-[10px] text-gray-300 uppercase tracking-[0.2em] font-medium">
-                  {product.category}
+                  {product.categoryName || "Uncategorized"}
                 </span>
               </div>
             </div>

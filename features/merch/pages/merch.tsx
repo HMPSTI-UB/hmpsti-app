@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingBag, Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { DEPARTMENT_NOISE_TEXTURE, merchCategories, merchProducts } from "@/constant/data";
-import type { MerchCategory } from "@/types/data";
+import { DEPARTMENT_NOISE_TEXTURE } from "@/constant/data";
+import type { PublicProduct } from "../types";
 
 import { useCart } from "../context/cart-context";
 import { ProductCard } from "../components/product-card";
@@ -27,17 +27,19 @@ const FadeIn = ({ children, delay = 0, y = 30, className }: { children: React.Re
   </motion.div>
 );
 
-function MerchContent() {
+function MerchContent({ categories, products }: { categories: any[], products: PublicProduct[] }) {
   const { totalItems } = useCart();
-  const [activeCategory, setActiveCategory] = useState<MerchCategory>("Semua");
+  const [activeCategory, setActiveCategory] = useState<string>("Semua");
   const [searchQuery, setSearchQuery] = useState("");
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   const ITEMS_PER_PAGE = 9;
 
-  const filteredProducts = merchProducts.filter((p) => {
-    const matchCategory = activeCategory === "Semua" || p.category === activeCategory;
+  const categoryNames = ["Semua", ...categories.map(c => c.name)];
+
+  const filteredProducts = products.filter((p) => {
+    const matchCategory = activeCategory === "Semua" || p.categoryName === activeCategory;
     const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchCategory && matchSearch;
   });
@@ -128,8 +130,8 @@ function MerchContent() {
           {/* FILTER */}
           <FadeIn delay={0.5} y={40}>
             <ProductFilter
-              categories={merchCategories}
-              activeCategory={activeCategory}
+              categories={categoryNames as any}
+              activeCategory={activeCategory as any}
               onSelectCategory={(cat) => {
                 setActiveCategory(cat);
                 setCurrentPage(1); // reset page on filter change
@@ -140,8 +142,7 @@ function MerchContent() {
           {/* ASYMMETRICAL BENTO GRID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-6 mt-8 md:mt-12">
             {currentProducts.map((product, idx) => {
-              // Exact 3 signature products per page (indices 0, 3, 7 on the current page)
-              const isLarge = idx === 0 || idx === 3 || idx === 7;
+              const isLarge = product.categorySlug === "signature";
               const colSpanClass = isLarge ? "lg:col-span-8" : "lg:col-span-4";
               
               return (
@@ -210,6 +211,6 @@ function MerchContent() {
   );
 }
 
-export default function Merch() {
-  return <MerchContent />;
+export default function Merch({ categories, products }: { categories: any[], products: PublicProduct[] }) {
+  return <MerchContent categories={categories} products={products} />;
 }

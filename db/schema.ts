@@ -76,3 +76,35 @@ export const merch_product_sizes = pgTable("merch_product_sizes", {
   sizeName: varchar("size_name", { length: 50 }).notNull(),
   stock: integer("stock").notNull(),
 });
+
+export const merchOrderStatusEnum = pgEnum('merch_order_status', ['MENUNGGU_VERIFIKASI', 'TERVERIFIKASI', 'DITOLAK']);
+
+export const merch_orders = pgTable("merch_orders", {
+  id: serial("id").primaryKey(),
+  orderCode: varchar("order_code").unique().notNull(),
+  buyerName: varchar("buyer_name").notNull(),
+  buyerContact: varchar("buyer_contact").notNull(),
+  buyerAddress: text("buyer_address").notNull(),
+  buyerNote: text("buyer_note"),
+  totalAmount: integer("total_amount").notNull(),
+  paymentProofUrl: text("payment_proof_url").notNull(),
+  status: merchOrderStatusEnum("status").default("MENUNGGU_VERIFIKASI").notNull(),
+  rejectionReason: text("rejection_reason"),
+  verifiedBy: text("verified_by").references(() => users.id),
+  verifiedAt: timestamp("verified_at", { mode: 'date' }),
+  createdAt: timestamp("created_at", { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: 'date' }).defaultNow().notNull(),
+});
+
+export const merch_order_items = pgTable("merch_order_items", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").references(() => merch_orders.id, { onDelete: "cascade" }).notNull(),
+  productId: integer("product_id").references(() => merch_products.id, { onDelete: "set null" }),
+  productNameSnapshot: varchar("product_name_snapshot").notNull(),
+  productPriceSnapshot: integer("product_price_snapshot").notNull(),
+  sizeId: integer("size_id").references(() => merch_product_sizes.id, { onDelete: "set null" }),
+  sizeNameSnapshot: varchar("size_name_snapshot"),
+  quantity: integer("quantity").notNull(),
+  subtotal: integer("subtotal").notNull(),
+});
+

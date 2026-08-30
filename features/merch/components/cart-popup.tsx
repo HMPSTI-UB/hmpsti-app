@@ -67,7 +67,7 @@ export function CartPopup({
                 >
                   <div className="w-16 h-16 bg-black rounded flex-shrink-0 overflow-hidden">
                     <img
-                      src={item.product.image}
+                      src={item.product.images?.[0]}
                       alt={item.product.name}
                       className="w-full h-full object-cover"
                     />

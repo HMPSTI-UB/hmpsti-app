@@ -10,7 +10,8 @@ import {
   Calendar, 
   UserCog,
   ShoppingBag,
-  Tags
+  Tags,
+  ClipboardList
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -61,6 +62,11 @@ export function SidebarNav({ onLinkClick, className }: SidebarNavProps) {
           href: "/dashboard/merch/categories",
           label: "Kategori",
           icon: Tags,
+        },
+        {
+          href: "/dashboard/merch/orders",
+          label: "Pesanan",
+          icon: ClipboardList,
         },
       ],
     },

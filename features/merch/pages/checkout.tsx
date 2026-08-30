@@ -5,7 +5,10 @@ import { motion } from "framer-motion";
 import { useCart } from "../context/cart-context";
 import { Check, UploadCloud, Trash2, FileText, Wallet, ShoppingBag, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useRef } from "react";
+import React, { useRef, useTransition } from "react";
+import { uploadPublicImage } from "@/features/merch/actions/public-actions";
+import { createOrder } from "../actions/checkout-actions";
+import { toast } from "sonner";
 
 const BANKS = [
   { id: "bca", name: "BCA", acc: "2353748545", logo: "/bca.webp" },
@@ -30,8 +33,10 @@ export default function Checkout() {
   });
   const [selectedBank, setSelectedBank] = useState("bca");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [orderCode, setOrderCode] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isPending, startTransition] = useTransition();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -62,12 +67,44 @@ export default function Checkout() {
     if (hasError) return;
 
     if (!selectedFile) {
-      alert("Mohon upload bukti pembayaran terlebih dahulu");
+      toast.error("Mohon upload bukti pembayaran terlebih dahulu");
       return;
     }
 
-    clearCart();
-    setIsSubmitted(true);
+    startTransition(async () => {
+      try {
+        const formDataUpload = new FormData();
+        formDataUpload.append("file", selectedFile);
+        
+        const uploadResult = await uploadPublicImage(formDataUpload);
+
+        const payload = {
+          buyerName: formData.name,
+          buyerContact: formData.whatsapp,
+          buyerAddress: formData.address,
+          paymentProofUrl: uploadResult.secure_url,
+          items: items.map(item => ({
+            productId: item.product.id,
+            sizeId: item.selectedSize?.id || null,
+            quantity: item.quantity,
+          })),
+        };
+
+        const res = await createOrder(payload);
+        if (res.error) {
+          toast.error("Checkout gagal", { description: res.error });
+          return;
+        }
+
+        if (res.success && res.orderCode) {
+          setOrderCode(res.orderCode);
+          clearCart();
+          setIsSubmitted(true);
+        }
+      } catch (err) {
+        toast.error("Terjadi kesalahan yang tidak terduga.");
+      }
+    });
   };
 
   if (isSubmitted) {
@@ -81,6 +118,7 @@ export default function Checkout() {
 
         <div className="bg-[#111111] border border-white/5 p-8 md:p-12 rounded-2xl max-w-2xl w-full relative z-10 flex flex-col items-center text-center">
           <h2 className="text-2xl font-bold mb-6">Pesanan telah tersampaikan !!</h2>
+          <p className="text-[#33A5D3] font-mono text-xl mb-6">{orderCode}</p>
           <p className="text-lg md:text-xl font-bold leading-relaxed mb-10">
             Pesanan Anda telah tercatat dalam sistem kami dan kami sedang memverifikasi status pembayarannya. Mohon menunggu; status pesanan Anda akan diperbarui dalam waktu kurang dari 12 jam.
           </p>
@@ -234,7 +272,7 @@ export default function Checkout() {
                 {items.map((item) => (
                   <div key={item.id} className="flex items-center gap-3 bg-[#1A1A1A] p-3 rounded-lg border border-white/5">
                     <div className="w-12 h-12 bg-black rounded overflow-hidden flex-shrink-0">
-                      <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />
+                      <img src={item.product.images?.[0]} alt={item.product.name} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-bold text-xs truncate">{item.product.name}</h4>
@@ -287,9 +325,11 @@ export default function Checkout() {
 
               <button 
                 onClick={handleCheckout}
-                className="w-full bg-[#33A5D3] hover:bg-[#33A5D3]/90 text-black font-black uppercase tracking-widest text-sm py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(51,165,211,0.2)]"
+                disabled={isPending}
+                className="w-full bg-[#33A5D3] hover:bg-[#33A5D3]/90 text-black font-black uppercase tracking-widest text-sm py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(51,165,211,0.2)] disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                Lanjutkan Pembayaran
+                {isPending ? <RefreshCw className="animate-spin" size={18} /> : null}
+                {isPending ? "Memproses..." : "Lanjutkan Pembayaran"}
               </button>
               <p className="text-center text-[10px] text-gray-500 mt-4 uppercase tracking-widest">
                 Tolong upload bukti pembayaran anda
