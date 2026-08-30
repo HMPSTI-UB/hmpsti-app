@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/db"
-import { merch_orders, merch_order_items, merch_products, users } from "@/db/schema"
+import { merch_orders, merch_order_items, merch_products, merch_product_sizes, users } from "@/db/schema"
 import { eq, desc, or, ilike, count, sql, inArray } from "drizzle-orm"
 import { requireUser, revalidateAll } from "./_guards"
 import { calculateAvailability } from "../utils"
@@ -114,11 +114,17 @@ export async function getOrderDetail(orderId: number) {
       productId: merch_order_items.productId,
       productNameSnapshot: merch_order_items.productNameSnapshot,
       productPriceSnapshot: merch_order_items.productPriceSnapshot,
+      sizeId: merch_order_items.sizeId,
       sizeNameSnapshot: merch_order_items.sizeNameSnapshot,
       quantity: merch_order_items.quantity,
       subtotal: merch_order_items.subtotal,
+      liveProductStock: merch_products.stock,
+      liveSizeStock: merch_product_sizes.stock,
+      hasSizes: merch_products.hasSizes,
     })
     .from(merch_order_items)
+    .leftJoin(merch_products, eq(merch_order_items.productId, merch_products.id))
+    .leftJoin(merch_product_sizes, eq(merch_order_items.sizeId, merch_product_sizes.id))
     .where(eq(merch_order_items.orderId, orderId));
 
   return { order, items };

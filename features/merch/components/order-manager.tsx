@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Eye, CheckCircle, XCircle, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, CheckCircle, XCircle, AlertTriangle, Search } from "lucide-react";
 import { format } from "date-fns";
 
 type OrderManagerProps = {
@@ -308,6 +308,15 @@ export function OrderManager({
       {/* Detail Dialog */}
       <Dialog open={selectedOrderId !== null} onOpenChange={(open) => !open && closeDetail()}>
         <DialogContent className="bg-[#0a0a0a] border-white/10 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
+          {(() => {
+            // Evaluasi apakah stok tidak cukup untuk pesanan ini
+            const isStockInsufficient = orderDetail?.items?.some((item: any) => {
+              const liveStock = item.hasSizes ? item.liveSizeStock : item.liveProductStock;
+              return item.quantity > (liveStock || 0);
+            }) || false;
+
+            return (
+              <>
           <DialogHeader>
             <DialogTitle className="text-xl flex items-center gap-3">
               Detail Pesanan
@@ -424,22 +433,33 @@ export function OrderManager({
                           </div>
                         </div>
                       ) : (
-                        <div className="flex gap-3">
-                          <Button 
-                            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-12"
-                            onClick={handleVerify}
-                          >
-                            <CheckCircle className="w-5 h-5 mr-2" />
-                            Verifikasi Pesanan
-                          </Button>
-                          <Button 
-                            variant="destructive" 
-                            className="font-bold h-12 px-6"
-                            onClick={() => setIsRejecting(true)}
-                          >
-                            <XCircle className="w-5 h-5 mr-2" />
-                            Tolak
-                          </Button>
+                        <div className="flex flex-col gap-3">
+                          {isStockInsufficient && (
+                            <div className="bg-red-500/10 border border-red-500/20 text-red-500 rounded-lg p-3 text-sm flex items-start gap-2">
+                              <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                              <p>
+                                <strong>Peringatan:</strong> Stok produk saat ini tidak mencukupi untuk memenuhi pesanan ini (stok habis dipesan). Anda hanya dapat menolak pesanan ini.
+                              </p>
+                            </div>
+                          )}
+                          <div className="flex gap-3">
+                            <Button 
+                              className={`flex-1 font-bold h-12 ${isStockInsufficient ? 'opacity-50 cursor-not-allowed bg-emerald-600/50' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                              onClick={handleVerify}
+                              disabled={isStockInsufficient}
+                            >
+                              <CheckCircle className="w-5 h-5 mr-2" />
+                              Verifikasi Pesanan
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              className="font-bold h-12 px-6"
+                              onClick={() => setIsRejecting(true)}
+                            >
+                              <XCircle className="w-5 h-5 mr-2" />
+                              Tolak
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -472,6 +492,9 @@ export function OrderManager({
               </div>
             </div>
           ) : null}
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
