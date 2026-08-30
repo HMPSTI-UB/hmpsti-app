@@ -8,7 +8,9 @@ import {
   MonitorSmartphone, 
   History, 
   Calendar, 
-  UserCog 
+  UserCog,
+  ShoppingBag,
+  Tags
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +46,21 @@ export function SidebarNav({ onLinkClick, className }: SidebarNavProps) {
           href: "/dashboard/vote-monitor",
           label: "Monitoring Vote",
           icon: History,
+        },
+      ],
+    },
+    {
+      section: "Merchandise",
+      items: [
+        {
+          href: "/dashboard/merch/products",
+          label: "Produk",
+          icon: ShoppingBag,
+        },
+        {
+          href: "/dashboard/merch/categories",
+          label: "Kategori",
+          icon: Tags,
         },
       ],
     },

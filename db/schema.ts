@@ -55,12 +55,19 @@ export const merch_products = pgTable("merch_products", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   price: integer("price").notNull(),
-  image: text("image").notNull(),
   hasSizes: boolean("has_sizes").default(false).notNull(),
   stock: integer("stock"),
   availabilityType: availabilityTypeEnum("availability_type").notNull(),
   createdAt: timestamp("created_at", { mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: 'date' }).defaultNow().notNull(),
+});
+
+export const merch_product_images = pgTable("merch_product_images", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").references(() => merch_products.id, { onDelete: "cascade" }).notNull(),
+  imageUrl: text("image_url").notNull(),
+  displayOrder: integer("display_order").notNull(),
+  createdAt: timestamp("created_at", { mode: 'date' }).defaultNow().notNull(),
 });
 
 export const merch_product_sizes = pgTable("merch_product_sizes", {

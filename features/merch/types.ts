@@ -16,13 +16,16 @@ export type ProductFormData = {
   name: string;
   description: string | null;
   price: number;
-  image: string;
+  images: string[];
   hasSizes: boolean;
   stock: number | null;
   forcePreorder?: boolean;
+  sizes?: SizeFormData[];
 };
 
 export type SizeFormData = {
   sizeName: string;
-  stock: number;
+  stock: number | "";
+  _id?: string;
+  _isCustom?: boolean;
 };

@@ -32,7 +32,7 @@ export async function syncProductSizes(productId: number, sizes: SizeFormData[])
     return {
       productId,
       sizeName: normalizedName,
-      stock: s.stock,
+      stock: s.stock === "" ? 0 : s.stock,
     };
   });
 
