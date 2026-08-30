@@ -6,6 +6,8 @@ import { eq, desc, or, ilike, count, sql, inArray } from "drizzle-orm"
 import { requireUser, revalidateAll } from "./_guards"
 import { calculateAvailability } from "../utils"
 
+export type ActionResult = { success: true } | { error: string };
+
 export async function getAdminOrders(params: {
   page?: number;
   pageSize?: number | "ALL";
@@ -122,7 +124,7 @@ export async function getOrderDetail(orderId: number) {
   return { order, items };
 }
 
-export async function verifyOrder(orderId: number) {
+export async function verifyOrder(orderId: number): Promise<ActionResult> {
   const user = await requireUser();
   
   try {
@@ -212,7 +214,7 @@ export async function verifyOrder(orderId: number) {
   }
 }
 
-export async function rejectOrder(orderId: number, rejectionReason: string) {
+export async function rejectOrder(orderId: number, rejectionReason: string): Promise<ActionResult> {
   const user = await requireUser();
 
   if (!rejectionReason || rejectionReason.trim() === "") {
