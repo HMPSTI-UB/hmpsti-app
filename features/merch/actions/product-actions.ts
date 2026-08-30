@@ -7,22 +7,7 @@ import { requireUser, revalidateAll } from "./_guards"
 import { ProductFormData, ProductQueryParams } from "../types"
 import { deleteImageFromCloudinary } from "./upload-actions"
 
-function calculateAvailability(
-  hasSizes: boolean,
-  stock: number | null,
-  forcePreorder?: boolean
-) {
-  if (hasSizes) {
-    return "preorder";
-  }
-  if (forcePreorder) {
-    return "preorder";
-  }
-  if (stock !== null && stock > 0) {
-    return "ready";
-  }
-  return "out_of_stock";
-}
+import { calculateAvailability } from "../utils"
 
 export async function getAdminProducts({
   page = 1,
