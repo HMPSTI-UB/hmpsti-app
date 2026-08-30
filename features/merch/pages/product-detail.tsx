@@ -2,37 +2,57 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import type { MerchProduct } from "@/types/data";
+import type { PublicProduct, PublicProductSize } from "../types";
 import { useCart } from "../context/cart-context";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { ShoppingBag, ChevronUp, ChevronDown, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-export default function ProductDetail({ product }: { product: MerchProduct }) {
+export default function ProductDetail({ product }: { product: PublicProduct }) {
   const { addToCart } = useCart();
   const router = useRouter();
+
   
-  const [selectedSize, setSelectedSize] = useState<string>(
-    product.sizes ? product.sizes[0] : ""
+  const [selectedSize, setSelectedSize] = useState<PublicProductSize | undefined>(
+    product.sizes && product.sizes.length > 0 ? product.sizes[0] : undefined
   );
   const [quantity, setQuantity] = useState<number>(1);
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
 
-  const handleIncrement = () => setQuantity((prev) => prev + 1);
+  const currentStock = product.hasSizes ? selectedSize?.stock : product.stock;
+  const isOutOfStock = product.availabilityType === "out_of_stock";
+  const isPreorder = product.availabilityType === "preorder";
+
+  const handleIncrement = () => {
+    setQuantity((prev) => {
+      if (!isPreorder && currentStock != null && prev >= currentStock) {
+        toast.error("Kuantitas melebihi stok yang tersedia");
+        return prev;
+      }
+      return prev + 1;
+    });
+  };
   const handleDecrement = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
 
   const handleAddToCart = () => {
-    addToCart(product, quantity, selectedSize || undefined);
+    addToCart(product, quantity, selectedSize);
     toast.success(`${product.name} ditambahkan ke keranjang`, {
-      description: `Kuantitas: ${quantity}${selectedSize ? ` | Ukuran: ${selectedSize}` : ""}`,
+      description: `Kuantitas: ${quantity}${selectedSize ? ` | Ukuran: ${selectedSize.sizeName}` : ""}`,
     });
   };
 
   const handleCheckout = () => {
-    addToCart(product, quantity, selectedSize || undefined);
+    addToCart(product, quantity, selectedSize);
     router.push("/checkout");
   };
+
+
+  const displayStock = isPreorder 
+    ? "Preorder" 
+    : isOutOfStock 
+      ? "Habis" 
+      : (currentStock != null ? `${currentStock} buah` : "Tersedia");
 
   return (
     <div className="min-h-screen bg-[#050505] text-white pt-32 pb-20 px-6 relative overflow-hidden">
@@ -53,7 +73,7 @@ export default function ProductDetail({ product }: { product: MerchProduct }) {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-16">
           
           {/* Left Column: Images Gallery */}
-          <div className="w-full md:col-span-5 flex flex-col gap-4">
+          <div className="w-full md:col-span-4 lg:col-span-4 flex flex-col gap-4">
             {/* Main Image */}
             <motion.div 
               initial={{ opacity: 0, x: -30 }}
@@ -65,20 +85,20 @@ export default function ProductDetail({ product }: { product: MerchProduct }) {
               <div className="absolute inset-0 bg-[#33A5D3]/20 blur-[80px] opacity-0 group-hover:opacity-50 transition-opacity duration-700 pointer-events-none" />
               
               <img 
-                src={product.image} // In a real app, this would be images[activeImageIndex]
+                src={product.images[activeImageIndex] || product.images[0]}
                 alt={product.name} 
                 className="w-full h-full object-cover relative z-10 transition-opacity duration-300"
               />
             </motion.div>
 
-            {/* Thumbnails (Shopee Style) */}
+            {/* Thumbnails */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               className="flex gap-3 w-full"
             >
-              {[...Array(5)].map((_, idx) => (
+              {product.images.map((imgUrl, idx) => (
                 <button
                   key={idx}
                   onClick={() => setActiveImageIndex(idx)}
@@ -89,7 +109,7 @@ export default function ProductDetail({ product }: { product: MerchProduct }) {
                   }`}
                 >
                   <img 
-                    src={product.image} 
+                    src={imgUrl} 
                     alt={`${product.name} view ${idx + 1}`} 
                     className="w-full h-full object-cover" 
                   />
@@ -107,13 +127,13 @@ export default function ProductDetail({ product }: { product: MerchProduct }) {
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="md:col-span-7 flex flex-col justify-start md:pt-4 h-full"
+            className="md:col-span-8 lg:col-span-7 flex flex-col justify-start md:pt-4 h-full"
           >
             <h1 className="text-3xl md:text-4xl lg:text-[42px] font-black mb-3 uppercase tracking-tighter leading-none">
               {product.name}
             </h1>
             <p className="text-[#33A5D3] text-lg font-bold tracking-widest uppercase mb-3">
-              {product.category}
+              {product.categoryName || "Uncategorized"}
             </p>
             
             <div className="mb-6">
@@ -127,7 +147,7 @@ export default function ProductDetail({ product }: { product: MerchProduct }) {
                 Rp {product.price.toLocaleString("id-ID")}
               </p>
               <p className="text-gray-400 font-mono text-sm">
-                Stock: <span className="text-white">Tersedia</span>
+                Stock: <span className={isOutOfStock ? "text-[#F56C6C]" : isPreorder ? "text-[#33A5D3]" : "text-white"}>{displayStock}</span>
               </p>
             </div>
 
@@ -140,15 +160,15 @@ export default function ProductDetail({ product }: { product: MerchProduct }) {
                 <div className="flex flex-wrap gap-3">
                   {product.sizes.map((size) => (
                     <button
-                      key={size}
+                      key={size.id}
                       onClick={() => setSelectedSize(size)}
                       className={`w-12 h-12 flex items-center justify-center border font-bold transition-all ${
-                        selectedSize === size
+                        selectedSize?.id === size.id
                           ? "bg-[#33A5D3] text-black border-[#33A5D3]"
                           : "bg-transparent text-white border-white/20 hover:border-white/50"
                       }`}
                     >
-                      {size}
+                      {size.sizeName}
                     </button>
                   ))}
                 </div>
@@ -183,26 +203,32 @@ export default function ProductDetail({ product }: { product: MerchProduct }) {
                     <span className="text-xl font-medium leading-none mb-1">+</span>
                   </button>
                 </div>
-                
-                <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">
-                  Tersedia
-                </span>
               </div>
 
               {/* Action Buttons */}
               <div className="flex flex-wrap sm:flex-nowrap items-stretch gap-4">
                 <button 
                   onClick={handleAddToCart}
-                  className="flex-1 flex items-center justify-center gap-2 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white border border-white/10 hover:border-white/30 font-bold uppercase tracking-widest text-sm h-[52px] transition-all"
+                  disabled={isOutOfStock}
+                  className={`flex-1 flex items-center justify-center gap-2 border font-bold uppercase tracking-widest text-sm h-[52px] transition-all ${
+                    isOutOfStock 
+                      ? "bg-gray-800 text-gray-500 border-gray-700 cursor-not-allowed" 
+                      : "bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white border-white/10 hover:border-white/30 cursor-pointer"
+                  }`}
                 >
                   Keranjang
                 </button>
 
                 <button 
                   onClick={handleCheckout}
-                  className="flex-1 flex items-center justify-center bg-[#33A5D3] hover:bg-[#33A5D3]/90 text-black font-black uppercase tracking-widest text-sm h-[52px] transition-all shadow-[0_0_20px_rgba(51,165,211,0.2)]"
+                  disabled={isOutOfStock}
+                  className={`flex-1 flex items-center justify-center font-black uppercase tracking-widest text-sm h-[52px] transition-all shadow-[0_0_20px_rgba(51,165,211,0.2)] ${
+                    isOutOfStock 
+                      ? "bg-gray-800 text-gray-500 cursor-not-allowed" 
+                      : "bg-[#33A5D3] hover:bg-[#33A5D3]/90 text-black cursor-pointer"
+                  }`}
                 >
-                  Checkout
+                  {isPreorder ? "Preorder" : "Checkout"}
                 </button>
               </div>
             </div>

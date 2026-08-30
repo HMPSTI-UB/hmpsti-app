@@ -29,3 +29,24 @@ export type SizeFormData = {
   _id?: string;
   _isCustom?: boolean;
 };
+
+export type PublicProductSize = {
+  id: number;
+  sizeName: string;
+  stock: number | null;
+};
+
+export type PublicProduct = {
+  id: number;
+  name: string;
+  categoryId: number | null;
+  categoryName: string | null;
+  categorySlug: string | null;
+  description: string | null;
+  price: number;
+  images: string[];
+  hasSizes: boolean;
+  stock: number | null;
+  availabilityType: "ready" | "out_of_stock" | "preorder";
+  sizes: PublicProductSize[];
+};

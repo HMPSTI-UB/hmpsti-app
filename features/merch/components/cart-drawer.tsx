@@ -21,7 +21,7 @@ export function CartDrawer({
     // Build WhatsApp message
     let message = `Halo Admin, saya ingin memesan merch:\n\n`;
     items.forEach((item, index) => {
-      const sizeStr = item.selectedSize ? ` (Ukuran: ${item.selectedSize})` : "";
+      const sizeStr = item.selectedSize ? ` (Ukuran: ${item.selectedSize.sizeName})` : "";
       message += `${index + 1}. ${item.product.name}${sizeStr} x${item.quantity} = Rp ${(item.product.price * item.quantity).toLocaleString("id-ID")}\n`;
     });
     message += `\n*Total Item:* ${totalItems}\n*Total Harga:* Rp ${totalPrice.toLocaleString("id-ID")}\n\nMohon informasi pembayarannya. Terima kasih!`;
@@ -91,7 +91,7 @@ export function CartDrawer({
                   >
                     <div className="w-20 h-20 rounded-xl overflow-hidden bg-black flex-shrink-0">
                       <img
-                        src={item.product.image}
+                        src={item.product.images?.[0]}
                         alt={item.product.name}
                         className="w-full h-full object-cover"
                       />
@@ -109,7 +109,7 @@ export function CartDrawer({
                         </button>
                       </div>
                       <p className="text-gray-400 text-xs mb-2">
-                        {item.selectedSize ? `Ukuran: ${item.selectedSize}` : "Aksesoris"}
+                        {item.selectedSize ? `Ukuran: ${item.selectedSize.sizeName}` : "Aksesoris"}
                       </p>
                       <div className="mt-auto flex items-center justify-between">
                         <span className="text-[#33A5D3] font-black text-sm">

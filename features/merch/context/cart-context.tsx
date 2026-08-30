@@ -1,11 +1,18 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
-import type { CartItem, MerchProduct } from "@/types/data";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import type { PublicProduct, PublicProductSize } from "../types";
+
+export type CartItem = {
+  id: string;
+  product: PublicProduct;
+  quantity: number;
+  selectedSize?: PublicProductSize;
+};
 
 type CartContextType = {
   items: CartItem[];
-  addToCart: (product: MerchProduct, quantity: number, selectedSize?: string) => void;
+  addToCart: (product: PublicProduct, quantity: number, selectedSize?: PublicProductSize) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -17,6 +24,31 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("hmpsti-merch-cart");
+      if (stored) {
+        setItems(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.error("Failed to load cart from localStorage", error);
+    }
+    setIsLoaded(true);
+  }, []);
+
+  // Save to localStorage when items change
+  useEffect(() => {
+    if (isLoaded) {
+      try {
+        localStorage.setItem("hmpsti-merch-cart", JSON.stringify(items));
+      } catch (error) {
+        console.error("Failed to save cart to localStorage", error);
+      }
+    }
+  }, [items, isLoaded]);
 
   // Calculate totals
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -26,12 +58,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addToCart = (
-    product: MerchProduct,
+    product: PublicProduct,
     quantity: number,
-    selectedSize?: string
+    selectedSize?: PublicProductSize
   ) => {
     setItems((prevItems) => {
-      const id = `${product.id}-${selectedSize || "nosize"}`;
+      const id = `${product.id}-${selectedSize ? selectedSize.id : "nosize"}`;
       const existingItem = prevItems.find((item) => item.id === id);
 
       if (existingItem) {

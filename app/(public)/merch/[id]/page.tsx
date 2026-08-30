@@ -1,18 +1,19 @@
-import { merchProducts } from "@/constant/data";
 import ProductDetail from "@/features/merch/pages/product-detail";
 import { notFound } from "next/navigation";
+import { getPublicProductById, getPublicProducts } from "@/features/merch/actions/public-actions";
 
-export function generateStaticParams() {
-  return merchProducts.map((product) => ({
-    id: product.id,
-  }));
-}
-
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
-  const product = merchProducts.find((p) => p.id === resolvedParams.id);
+  
+  const idNum = parseInt(resolvedParams.id, 10);
+  if (isNaN(idNum)) {
+    notFound();
+  }
+
+  const product = await getPublicProductById(idNum);
 
   if (!product) {
     notFound();
