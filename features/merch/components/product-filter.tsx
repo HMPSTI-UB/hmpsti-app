@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import type { MerchCategory } from "@/types/data";
 import { cn } from "@/lib/utils";
 
 const customEase: [number, number, number, number] = [0.32, 0.72, 0, 1];
@@ -11,9 +10,9 @@ export function ProductFilter({
   activeCategory,
   onSelectCategory,
 }: {
-  categories: MerchCategory[];
-  activeCategory: MerchCategory;
-  onSelectCategory: (category: MerchCategory) => void;
+  categories: string[];
+  activeCategory: string;
+  onSelectCategory: (category: string) => void;
 }) {
   return (
     <div className="w-full overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

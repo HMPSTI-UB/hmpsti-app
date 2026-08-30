@@ -108,3 +108,15 @@ export const merch_order_items = pgTable("merch_order_items", {
   subtotal: integer("subtotal").notNull(),
 });
 
+export const auditEntityEnum = pgEnum('audit_entity', ['category', 'product', 'order']);
+export const auditActionEnum = pgEnum('audit_action', ['CREATE', 'UPDATE', 'DELETE', 'VERIFY', 'REJECT']);
+
+export const merch_audit_logs = pgTable("merch_audit_logs", {
+  id: serial("id").primaryKey(),
+  adminId: text("admin_id").references(() => users.id, { onDelete: "set null" }),
+  entity: auditEntityEnum("entity").notNull(),
+  entityId: integer("entity_id"),
+  action: auditActionEnum("action").notNull(),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at", { mode: 'date' }).defaultNow().notNull(),
+});

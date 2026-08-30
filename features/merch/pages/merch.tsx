@@ -130,8 +130,8 @@ function MerchContent({ categories, products }: { categories: any[], products: P
           {/* FILTER */}
           <FadeIn delay={0.5} y={40}>
             <ProductFilter
-              categories={categoryNames as any}
-              activeCategory={activeCategory as any}
+              categories={categoryNames}
+              activeCategory={activeCategory}
               onSelectCategory={(cat) => {
                 setActiveCategory(cat);
                 setCurrentPage(1); // reset page on filter change
