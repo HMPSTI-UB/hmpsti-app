@@ -11,7 +11,8 @@ import {
   UserCog,
   ShoppingBag,
   Tags,
-  ClipboardList
+  ClipboardList,
+  ScrollText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -67,6 +68,11 @@ export function SidebarNav({ onLinkClick, className }: SidebarNavProps) {
           href: "/dashboard/merch/orders",
           label: "Pesanan",
           icon: ClipboardList,
+        },
+        {
+          href: "/dashboard/merch/audit-logs",
+          label: "Audit Log",
+          icon: ScrollText,
         },
       ],
     },

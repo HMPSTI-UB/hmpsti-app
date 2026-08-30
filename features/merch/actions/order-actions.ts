@@ -5,6 +5,7 @@ import { merch_orders, merch_order_items, merch_products, merch_product_sizes, u
 import { eq, desc, or, ilike, count, sql, inArray } from "drizzle-orm"
 import { requireUser, revalidateAll } from "./_guards"
 import { calculateAvailability } from "../utils"
+import { recordAuditLog } from "./audit-log-actions"
 
 export type ActionResult = { success: true } | { error: string };
 
@@ -132,10 +133,11 @@ export async function getOrderDetail(orderId: number) {
 
 export async function verifyOrder(orderId: number): Promise<ActionResult> {
   const user = await requireUser();
+  const adminName = user.name || "Admin";
   
   try {
     const [order] = await db
-      .select({ id: merch_orders.id, status: merch_orders.status })
+      .select({ id: merch_orders.id, status: merch_orders.status, buyerName: merch_orders.buyerName, orderCode: merch_orders.orderCode })
       .from(merch_orders)
       .where(eq(merch_orders.id, orderId))
       .limit(1);
@@ -212,6 +214,14 @@ export async function verifyOrder(orderId: number): Promise<ActionResult> {
 
     await db.batch(batchOps as any);
     
+    await recordAuditLog(
+      user.id!,
+      "order",
+      orderId,
+      "VERIFY",
+      `${adminName} menerima pesanan dari "${order.buyerName}" (${order.orderCode})`
+    );
+
     revalidateAll();
     return { success: true };
   } catch (error) {
@@ -222,6 +232,7 @@ export async function verifyOrder(orderId: number): Promise<ActionResult> {
 
 export async function rejectOrder(orderId: number, rejectionReason: string): Promise<ActionResult> {
   const user = await requireUser();
+  const adminName = user.name || "Admin";
 
   if (!rejectionReason || rejectionReason.trim() === "") {
     return { error: "Alasan penolakan wajib diisi." };
@@ -229,7 +240,7 @@ export async function rejectOrder(orderId: number, rejectionReason: string): Pro
 
   try {
     const [order] = await db
-      .select({ id: merch_orders.id, status: merch_orders.status })
+      .select({ id: merch_orders.id, status: merch_orders.status, buyerName: merch_orders.buyerName, orderCode: merch_orders.orderCode })
       .from(merch_orders)
       .where(eq(merch_orders.id, orderId))
       .limit(1);
@@ -248,6 +259,14 @@ export async function rejectOrder(orderId: number, rejectionReason: string): Pro
         updatedAt: sql`now()`,
       })
       .where(eq(merch_orders.id, orderId));
+
+    await recordAuditLog(
+      user.id!,
+      "order",
+      orderId,
+      "REJECT",
+      `${adminName} menolak pesanan dari "${order.buyerName}" (${order.orderCode}) — alasan: ${rejectionReason.trim()}`
+    );
 
     revalidateAll();
     return { success: true };
