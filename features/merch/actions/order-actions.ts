@@ -29,7 +29,7 @@ export async function getAdminOrders(params: {
     );
   }
   if (status) {
-    conditions.push(eq(merch_orders.status, status as any));
+    conditions.push(eq(merch_orders.status, status as "MENUNGGU_VERIFIKASI" | "TERVERIFIKASI" | "DITOLAK"));
   }
 
   const where = conditions.length > 0 ? or(...conditions) : undefined;
@@ -212,7 +212,7 @@ export async function verifyOrder(orderId: number): Promise<ActionResult> {
         .where(eq(merch_orders.id, orderId))
     );
 
-    await db.batch(batchOps as any);
+    await db.batch(batchOps as [any, ...any[]]);
     
     await recordAuditLog(
       user.id!,

@@ -17,7 +17,7 @@ export async function ProductPage({ searchParams }: Props) {
   const limit = searchParams.limit === "ALL" ? "ALL" : searchParams.limit ? parseInt(searchParams.limit, 10) : 10;
   const search = searchParams.search || "";
   const categoryId = searchParams.category ? parseInt(searchParams.category, 10) : undefined;
-  const availability = (searchParams.availability as any) || undefined;
+  const availability = (searchParams.availability as "ready" | "out_of_stock" | "preorder") || undefined;
 
   // Fetch initial data concurrently
   const [productsData, categories] = await Promise.all([

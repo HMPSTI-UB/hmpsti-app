@@ -38,7 +38,7 @@ export async function getAuditLogs(params: {
 
   let whereClause = undefined;
   if (entity && entity !== "all") {
-    whereClause = eq(merch_audit_logs.entity, entity as any);
+    whereClause = eq(merch_audit_logs.entity, entity as "category" | "product" | "order");
   }
 
   const countQuery = db

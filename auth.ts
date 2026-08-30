@@ -1,8 +1,21 @@
-import NextAuth from "next-auth"
+import NextAuth, { type DefaultSession } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { db } from "./db"
 import { users } from "./db/schema"
 import { eq } from "drizzle-orm"
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string
+      role?: string
+    } & DefaultSession["user"]
+  }
+
+  interface User {
+    role?: string
+  }
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: "jwt" },
@@ -40,14 +53,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
-        token.role = (user as any).role;
+        token.role = user.role;
       }
       return token;
     },
     session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub!;
-        (session.user as any).role = token.role;
+        session.user.role = token.role as string;
       }
       return session;
     }

@@ -37,7 +37,7 @@ export default async function AuditLogPage({
       </div>
       <div className="mt-8">
         <AuditLogTable 
-          logs={logs as any} 
+          logs={logs as Extract<typeof logs, any[]>} 
           totalItemCount={total} 
           currentPage={page} 
           totalPages={totalPages} 
