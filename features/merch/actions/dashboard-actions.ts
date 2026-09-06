@@ -44,3 +44,33 @@ export async function getMerchDashboardStats() {
     totalRevenue
   };
 }
+
+export async function getMonthlySalesStats() {
+  await requireUser();
+  const currentYear = new Date().getFullYear();
+
+  const stats = await db
+    .select({
+      month: sql<number>`extract(month from ${merch_orders.createdAt})::int`,
+      total: sql<number>`COALESCE(SUM(${merch_orders.totalAmount}), 0)::int`
+    })
+    .from(merch_orders)
+    .where(
+      sql`${merch_orders.status} = 'TERVERIFIKASI' AND extract(year from ${merch_orders.createdAt}) = ${currentYear}`
+    )
+    .groupBy(sql`extract(month from ${merch_orders.createdAt})`)
+    .orderBy(sql`extract(month from ${merch_orders.createdAt})`);
+
+  const monthlyData = Array.from({ length: 12 }, (_, i) => ({
+    monthName: new Date(0, i).toLocaleString('id-ID', { month: 'short' }),
+    total: 0
+  }));
+
+  stats.forEach(stat => {
+    if (stat.month >= 1 && stat.month <= 12) {
+      monthlyData[stat.month - 1].total = stat.total;
+    }
+  });
+
+  return monthlyData;
+}

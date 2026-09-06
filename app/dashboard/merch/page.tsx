@@ -1,9 +1,11 @@
 import { ShoppingBag, Tags, ClipboardList, Clock, CheckCircle, Wallet, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { getMerchDashboardStats } from "@/features/merch/actions/dashboard-actions";
+import { getMerchDashboardStats, getMonthlySalesStats } from "@/features/merch/actions/dashboard-actions";
+import { MerchSalesChart } from "@/features/merch/components/sales-chart";
 
 export default async function MerchDashboardPage() {
   const stats = await getMerchDashboardStats();
+  const monthlySales = await getMonthlySalesStats();
 
   // Format currency
   const formatRupiah = (amount: number) => {
@@ -125,6 +127,11 @@ export default async function MerchDashboardPage() {
           </div>
         </div>
 
+      </div>
+
+      {/* Monthly Sales Chart */}
+      <div className="mt-8">
+        <MerchSalesChart data={monthlySales} />
       </div>
     </div>
   );
