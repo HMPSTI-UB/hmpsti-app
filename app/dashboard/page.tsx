@@ -1,4 +1,4 @@
-import { Users, Vote, Calendar, Clock, ArrowRight, Star, LayoutDashboard, ShoppingBag } from "lucide-react";
+import { Users, Vote, Calendar, Clock, ArrowRight, Star, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { getDashboardStats } from "@/features/pameran-iot/actions/dashboard-actions";
 import { format } from "date-fns";
@@ -22,7 +22,7 @@ export default async function DashboardPage() {
       </header>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="bg-white/5 border border-white/10 p-6 rounded-2xl hover:bg-white/10 transition-all group">
           <div className="flex justify-between items-start">
             <div>
@@ -80,21 +80,6 @@ export default async function DashboardPage() {
           </div>
           <Link href="/dashboard/vote-sessions" className="inline-flex items-center text-xs text-purple-400 mt-4 hover:underline">
             Atur jadwal <ArrowRight className="h-3 w-3 ml-1" />
-          </Link>
-        </div>
-
-        <div className="bg-white/5 border border-white/10 p-6 rounded-2xl hover:bg-white/10 transition-all group">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-gray-400 text-sm font-medium">Total Produk</h3>
-              <p className="text-4xl font-bold mt-2 text-white">{stats.totalProducts}</p>
-            </div>
-            <div className="p-3 bg-orange-500/10 rounded-xl group-hover:bg-orange-500/20 transition-colors">
-              <ShoppingBag className="h-6 w-6 text-orange-400" />
-            </div>
-          </div>
-          <Link href="/dashboard/merch/products" className="inline-flex items-center text-xs text-orange-400 mt-4 hover:underline">
-            Kelola produk <ArrowRight className="h-3 w-3 ml-1" />
           </Link>
         </div>
       </div>
