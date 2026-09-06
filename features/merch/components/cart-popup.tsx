@@ -94,7 +94,7 @@ export function CartPopup({
                           <Plus size={12} />
                         </button>
                       </div>
-                      <span className="text-sm font-bold text-[#F56C6C]">
+                      <span className="text-sm font-bold text-white">
                         Rp. {(item.product.price * item.quantity).toLocaleString("id-ID")}
                       </span>
                     </div>
@@ -115,7 +115,7 @@ export function CartPopup({
             <div className="p-4 bg-[#1A1A1A]">
               <div className="flex justify-between items-center mb-4 font-bold">
                 <span>Total</span>
-                <span className="text-[#F56C6C]">
+                <span className="text-white">
                   Rp. {totalPrice.toLocaleString("id-ID")}
                 </span>
               </div>

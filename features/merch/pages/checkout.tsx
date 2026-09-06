@@ -277,7 +277,7 @@ export default function Checkout() {
                     <div className="flex-1 min-w-0">
                       <h4 className="font-bold text-xs truncate">{item.product.name}</h4>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        {item.quantity} x <span className="text-[#F56C6C]">Rp {(item.product.price).toLocaleString("id-ID")}</span>
+                        {item.quantity} x <span className="text-white">Rp {(item.product.price).toLocaleString("id-ID")}</span>
                       </p>
                     </div>
                     <button onClick={() => removeFromCart(item.id)} className="text-gray-500 hover:text-red-500 transition-colors">
