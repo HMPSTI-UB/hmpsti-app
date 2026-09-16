@@ -19,16 +19,19 @@ import {
 import { getTeamVotes, deleteVote } from "../actions/vote-monitor-actions";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/handle-action";
+import type { AdminSession, VoteRanking, TeamVote } from "../types";
 
 import ExcelJS from "exceljs";
 
-export function VoteMonitor({ rankings, sessions }: { rankings: any[], sessions: any[] }) {
+export function VoteMonitor({ rankings, sessions }: { rankings: VoteRanking[], sessions: AdminSession[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
-  const [teamVotes, setTeamVotes] = useState<any[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<VoteRanking | null>(null);
+  const [teamVotes, setTeamVotes] = useState<TeamVote[]>([]);
   const [isLoadingVotes, setIsLoadingVotes] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -46,16 +49,16 @@ export function VoteMonitor({ rankings, sessions }: { rankings: any[], sessions:
     });
   };
 
-  const handleViewVotes = async (team: any) => {
+  const handleViewVotes = async (team: VoteRanking) => {
     setSelectedTeam(team);
     setIsDialogOpen(true);
     setIsLoadingVotes(true);
     try {
       const votes = await getTeamVotes(team.id);
       setTeamVotes(votes);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      alert("Gagal mengambil data vote");
+      toast.error(getErrorMessage(err, "Gagal mengambil data vote"));
     } finally {
       setIsLoadingVotes(false);
     }
@@ -69,8 +72,8 @@ export function VoteMonitor({ rankings, sessions }: { rankings: any[], sessions:
         setTeamVotes(prev => prev.filter(v => v.id !== voteId));
         // Refresh server data
         router.refresh();
-      } catch (err: any) {
-        alert(err.message || "Gagal menghapus vote");
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err, "Gagal menghapus vote"));
       }
     });
   };
@@ -129,7 +132,7 @@ export function VoteMonitor({ rankings, sessions }: { rankings: any[], sessions:
         team.code,
         team.title,
         team.sessionName || "-",
-        team.className || team.team || "-",
+        team.className || "-",
         team.teamMembers,
         team.voteCount
       ]);
@@ -313,7 +316,7 @@ export function VoteMonitor({ rankings, sessions }: { rankings: any[], sessions:
                       <TableCell className="font-medium text-white">
                         {vote.voterName || <span className="text-gray-500 italic">Anonim</span>}
                       </TableCell>
-                      <TableCell className="text-gray-300 text-sm max-w-xs truncate" title={vote.message}>
+                      <TableCell className="text-gray-300 text-sm max-w-xs truncate" title={vote.message ?? undefined}>
                         {vote.message || <span className="text-gray-500 italic">-</span>}
                       </TableCell>
                       <TableCell className="text-right">

@@ -29,7 +29,6 @@ export async function getDashboardStats() {
     activeSession,
     totalTeams: totalTeamsCount[0].count,
     totalVotes: totalVotesCount[0].count,
-    totalProducts: 0, // Placeholder for future merch feature
     recentVotes
   };
 }

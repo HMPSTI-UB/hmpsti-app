@@ -3,11 +3,12 @@
 import { db } from "@/db"
 import { iot_teams, vote_sessions, votes } from "@/db/schema"
 import { eq, sql, desc } from "drizzle-orm"
-import { auth } from "@/auth"
-import { revalidatePath } from "next/cache"
+import { requireUser, revalidateAll } from "./_guards"
 
 export async function getVoteRankings(sessionId?: number) {
-  let query = db
+  const where = sessionId ? eq(iot_teams.sessionId, sessionId) : undefined;
+
+  const results = await db
     .select({
       id: iot_teams.id,
       code: iot_teams.code,
@@ -20,13 +21,8 @@ export async function getVoteRankings(sessionId?: number) {
     })
     .from(iot_teams)
     .leftJoin(votes, eq(iot_teams.id, votes.teamId))
-    .leftJoin(vote_sessions, eq(iot_teams.sessionId, vote_sessions.id));
-
-  if (sessionId) {
-    query = query.where(eq(iot_teams.sessionId, sessionId)) as any;
-  }
-
-  const results = await query
+    .leftJoin(vote_sessions, eq(iot_teams.sessionId, vote_sessions.id))
+    .where(where)
     .groupBy(iot_teams.id, vote_sessions.name)
     .orderBy(desc(sql`count(${votes.id})`));
 
@@ -49,10 +45,9 @@ export async function getTeamVotes(teamId: number) {
 }
 
 export async function deleteVote(voteId: number) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  await requireUser();
 
   await db.delete(votes).where(eq(votes.id, voteId));
 
-  revalidatePath("/", "layout");
+  revalidateAll();
 }

@@ -2,27 +2,39 @@
 
 import { db } from "@/db"
 import { vote_sessions, votes } from "@/db/schema"
-import { eq } from "drizzle-orm"
-import { revalidatePath } from "next/cache"
+import { and, eq, gte, lte, sql } from "drizzle-orm"
+import { revalidateAll } from "./_guards"
 
 export async function submitVote(teamId: number, sessionId: number, voterName: string | undefined, message: string | undefined) {
   try {
-    // Validasi apakah sesi yang dituju masih aktif (berdasarkan waktu server)
-    const sessionRecord = await db
-      .select()
+    // Validasi waktu sesi pakai jam server DB (CURRENT_TIMESTAMP), bukan `new Date()` JS,
+    // supaya tidak ada mismatch timezone antara app server dan Neon.
+    const activeSession = await db
+      .select({ id: vote_sessions.id })
       .from(vote_sessions)
-      .where(eq(vote_sessions.id, sessionId))
+      .where(
+        and(
+          eq(vote_sessions.id, sessionId),
+          lte(vote_sessions.startTime, sql`CURRENT_TIMESTAMP`),
+          gte(vote_sessions.endTime, sql`CURRENT_TIMESTAMP`),
+        )
+      )
       .limit(1);
 
-    if (!sessionRecord || sessionRecord.length === 0) {
-      return { success: false, error: "Sesi voting tidak ditemukan." };
-    }
+    if (activeSession.length === 0) {
+      // Bedakan pesan: sesi tidak ada vs sesi ada tapi di luar jendela waktu.
+      const exists = await db
+        .select({ id: vote_sessions.id })
+        .from(vote_sessions)
+        .where(eq(vote_sessions.id, sessionId))
+        .limit(1);
 
-    const now = new Date();
-    const activeSession = sessionRecord[0];
-
-    if (now < activeSession.startTime || now > activeSession.endTime) {
-      return { success: false, error: "Mohon maaf, sesi voting ini belum dimulai atau sudah berakhir." };
+      return {
+        success: false,
+        error: exists.length === 0
+          ? "Sesi voting tidak ditemukan."
+          : "Mohon maaf, sesi voting ini belum dimulai atau sudah berakhir.",
+      };
     }
 
     await db.insert(votes).values({
@@ -31,9 +43,9 @@ export async function submitVote(teamId: number, sessionId: number, voterName: s
       voterName: voterName || null,
       message: message || null,
     });
-    
-    revalidatePath("/", "layout");
-    
+
+    revalidateAll();
+
     return { success: true };
   } catch (error) {
     console.error("Failed to submit vote:", error);

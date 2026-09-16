@@ -20,21 +20,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { createSession, updateSession, deleteSession, startSessionNow, endSessionNow, resetSessionVotes } from "../actions/session-actions";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/handle-action";
+import type { AdminSession } from "../types";
 
-type Session = {
-  id: number;
-  name: string;
-  startTime: Date;
-  endTime: Date;
-  teamCount: number;
-  voteCount: number;
-};
-
-export function SessionManager({ initialSessions }: { initialSessions: Session[] }) {
+export function SessionManager({ initialSessions }: { initialSessions: AdminSession[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingSession, setEditingSession] = useState<Session | null>(null);
+  const [editingSession, setEditingSession] = useState<AdminSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   // Form State
@@ -65,7 +59,7 @@ export function SessionManager({ initialSessions }: { initialSessions: Session[]
     return (new Date(date.getTime() - tzoffset)).toISOString().slice(0, 16);
   };
 
-  const handleOpenDialog = (session?: Session) => {
+  const handleOpenDialog = (session?: AdminSession) => {
     setError(null);
     if (session) {
       setEditingSession(session);
@@ -103,8 +97,8 @@ export function SessionManager({ initialSessions }: { initialSessions: Session[]
         
         setIsDialogOpen(false);
         router.refresh();
-      } catch (err: any) {
-        setError(err.message || "Terjadi kesalahan");
+      } catch (err: unknown) {
+        setError(getErrorMessage(err));
       }
     });
   };
@@ -114,8 +108,8 @@ export function SessionManager({ initialSessions }: { initialSessions: Session[]
       try {
         await deleteSession(id);
         router.refresh();
-      } catch (error: any) {
-        alert(error.message || "Gagal menghapus sesi");
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err, "Gagal menghapus sesi"));
       }
     });
   };
@@ -125,8 +119,8 @@ export function SessionManager({ initialSessions }: { initialSessions: Session[]
       try {
         await startSessionNow(id);
         router.refresh();
-      } catch (error: any) {
-        alert(error.message || "Gagal memulai sesi");
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err, "Gagal memulai sesi"));
       }
     });
   };
@@ -136,8 +130,8 @@ export function SessionManager({ initialSessions }: { initialSessions: Session[]
       try {
         await endSessionNow(id);
         router.refresh();
-      } catch (error: any) {
-        alert(error.message || "Gagal mengakhiri sesi");
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err, "Gagal mengakhiri sesi"));
       }
     });
   };
@@ -147,8 +141,8 @@ export function SessionManager({ initialSessions }: { initialSessions: Session[]
       try {
         await resetSessionVotes(id);
         router.refresh();
-      } catch (error: any) {
-        alert(error.message || "Gagal mereset sesi");
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err, "Gagal mereset sesi"));
       }
     });
   };
