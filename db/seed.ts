@@ -1,13 +1,13 @@
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { users } from './schema';
 import * as schema from './schema';
 import * as dotenv from 'dotenv';
 
 dotenv.config({ path: '.env' });
 
-const sql = neon(process.env.DATABASE_URL!);
-const db = drizzle({ client: sql, schema });
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const db = drizzle({ client: pool, schema });
 
 async function main() {
   console.log('Seeding initial admin user...');
@@ -54,6 +54,8 @@ async function main() {
     console.log('Seed successful!');
   } catch (error) {
     console.error('Seed failed:', error);
+  } finally {
+    await pool.end();
   }
 }
 

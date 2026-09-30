@@ -1,12 +1,12 @@
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from './schema';
 import * as dotenv from 'dotenv';
 
 dotenv.config({ path: '.env' });
 
-const sql = neon(process.env.DATABASE_URL!);
-const db = drizzle({ client: sql, schema });
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const db = drizzle({ client: pool, schema });
 
 async function main() {
   console.log('Seeding IoT Teams...');
@@ -14,9 +14,9 @@ async function main() {
   try {
     // Clear existing teams and their votes before seeding to avoid unique constraint errors
     await db.delete(schema.votes);
-    await db.delete(schema.iot_teams);
+    await db.delete(schema.teams);
 
-    await db.insert(schema.iot_teams).values([
+    await db.insert(schema.teams).values([
       {
         code: 'T4A1',
         className: 'T4A',
@@ -501,6 +501,8 @@ async function main() {
     console.log('Successfully seeded IoT Teams.');
   } catch (error) {
     console.error('Seed failed:', error);
+  } finally {
+    await pool.end();
   }
 }
 

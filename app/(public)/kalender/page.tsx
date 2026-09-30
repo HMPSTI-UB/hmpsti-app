@@ -1,3 +1,5 @@
-import KalenderPage from "@/features/calendar/pages/kalender-page";
+import { redirect } from "next/navigation";
 
-export default KalenderPage;
+export default function Page() {
+  redirect("/");
+}

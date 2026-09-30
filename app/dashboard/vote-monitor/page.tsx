@@ -1,4 +1,4 @@
-import AdminVoteMonitorPage from "@/features/pameran-iot/pages/admin-vote-monitor-page";
+import AdminVoteMonitorPage from "@/features/pameran/pages/admin-vote-monitor-page";
 
 export const dynamic = "force-dynamic";
 

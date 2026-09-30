@@ -8,6 +8,76 @@
       "when": 1781778588206,
       "tag": "0000_green_katie_power",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787712902850,
+      "tag": "0001_free_exiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787915205190,
+      "tag": "0002_hard_stephen_strange",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787968093243,
+      "tag": "0003_aromatic_beyonder",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788059066272,
+      "tag": "0004_wandering_peter_quill",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788106372880,
+      "tag": "0005_last_nehzno",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788376863880,
+      "tag": "0006_perfect_frightful_four",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789886950261,
+      "tag": "0007_moaning_zombie",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789986900000,
+      "tag": "0008_site_settings_teams_rename",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790183591708,
+      "tag": "0009_marvelous_queen_noir",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790769526918,
+      "tag": "0010_classy_red_ghost",
+      "breakpoints": true
     }
   ]
 }
