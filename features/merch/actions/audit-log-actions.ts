@@ -3,11 +3,11 @@
 import { db } from "@/db"
 import { merch_audit_logs } from "@/db/schema"
 import { desc, eq, sql } from "drizzle-orm"
-import { requireUser } from "./_guards"
+import { requireAdmin } from "./_guards"
 
 export async function recordAuditLog(
   adminId: string,
-  entity: "category" | "product" | "order",
+  entity: "category" | "product" | "order" | "merchant" | "payment_account",
   entityId: number | null,
   action: "CREATE" | "UPDATE" | "DELETE" | "VERIFY" | "REJECT",
   message: string
@@ -32,13 +32,13 @@ export async function getAuditLogs(params: {
   pageSize?: number | "ALL";
   entity?: string;
 }) {
-  await requireUser();
+  await requireAdmin();
 
   const { page = 1, pageSize = 10, entity } = params;
 
   let whereClause = undefined;
   if (entity && entity !== "all") {
-    whereClause = eq(merch_audit_logs.entity, entity as "category" | "product" | "order");
+    whereClause = eq(merch_audit_logs.entity, entity as "category" | "product" | "order" | "merchant" | "payment_account");
   }
 
   const countQuery = db

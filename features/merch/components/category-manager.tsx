@@ -3,29 +3,28 @@
 import { useState, useTransition } from "react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { 
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit, Trash2, Loader2, FolderTree } from "lucide-react";
-import { 
-  Dialog, DialogContent, DialogHeader, DialogTitle 
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { 
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle 
+import { Plus, Edit, Trash2, Loader2, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { 
-  createCategory, 
-  updateCategory, 
-  deleteCategory, 
-  getCategoryImpact 
+import {
+  createCategory, updateCategory, deleteCategory, deleteManyCategories, getCategoryImpact,
 } from "../actions/category-actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/handle-action";
+import { cn } from "@/lib/utils";
 
 type Category = {
   id: number;
@@ -40,15 +39,34 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  
-  // Form State
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
 
-  // Delete State
+  // Selection + bulk delete
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+  const [isDeleting, startDelete] = useTransition();
+
+  // Single delete
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
   const [impactCount, setImpactCount] = useState<number | null>(null);
   const [isFetchingImpact, setIsFetchingImpact] = useState(false);
+
+  const allSelected = selected.size > 0 && selected.size === initialCategories.length;
+  const selectedCount = selected.size;
+
+  const toggleAll = () => {
+    setSelected(allSelected ? new Set() : new Set(initialCategories.map((c) => c.id)));
+  };
+
+  const toggleOne = (id: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const handleOpenForm = (category?: Category) => {
     setFormError(null);
@@ -67,15 +85,14 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
   const handleNameChange = (val: string) => {
     setName(val);
     if (!editingCategory) {
-      // Auto-generate slug for new category
-      setSlug(val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''));
+      setSlug(val.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, ""));
     }
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
-    
+
     startTransition(async () => {
       try {
         if (editingCategory) {
@@ -118,7 +135,6 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
 
   const executeDelete = async () => {
     if (!deletingCategory) return;
-    
     startTransition(async () => {
       try {
         const res = await deleteCategory(deletingCategory.id);
@@ -135,20 +151,127 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
     });
   };
 
+  const confirmBulkDelete = () => {
+    startDelete(async () => {
+      const res = await deleteManyCategories(Array.from(selected));
+      if (res?.error) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(`${selected.size} kategori dihapus`);
+      setIsBulkDeleteOpen(false);
+      setSelected(new Set());
+      router.refresh();
+    });
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <FolderTree className="text-[#33A5D3]" /> Kategori Produk
-          </h2>
-          <p className="text-gray-400 text-sm mt-1">Kelola master kategori untuk merchandise</p>
-        </div>
-        
+    <div className="space-y-4">
+      <div className="flex justify-end">
         <Button onClick={() => handleOpenForm()} className="bg-[#33A5D3] hover:bg-[#33A5D3]/90 text-black font-bold gap-2">
           <Plus className="w-4 h-4" />
           Tambah Kategori
         </Button>
+      </div>
+
+      {selectedCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-[#33A5D3]/10 border border-[#33A5D3]/20 rounded-xl">
+          <p className="text-sm text-gray-300">
+            <span className="font-semibold text-white">{selectedCount}</span> kategori dipilih
+          </p>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())} className="text-gray-400 hover:text-white">
+              <X className="w-4 h-4 mr-1" /> Batal pilih
+            </Button>
+            <Button size="sm" onClick={() => setIsBulkDeleteOpen(true)} className="bg-red-600 hover:bg-red-700 text-white gap-1.5">
+              <Trash2 className="w-4 h-4" /> Hapus
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-[#111111] border border-white/5 rounded-2xl overflow-hidden">
+        <Table>
+          <TableHeader className="bg-black/20 hover:bg-black/20">
+            <TableRow className="border-white/10 hover:bg-transparent">
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={allSelected ? (selected.size < initialCategories.length ? "indeterminate" : true) : false}
+                  onCheckedChange={toggleAll}
+                  aria-label="Pilih semua kategori"
+                />
+              </TableHead>
+              <TableHead className="text-gray-400 font-medium">Nama Kategori</TableHead>
+              <TableHead className="text-gray-400 font-medium">Slug</TableHead>
+              <TableHead className="text-gray-400 font-medium text-right">Ditambahkan</TableHead>
+              <TableHead className="text-gray-400 font-medium text-right w-[100px]">Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {initialCategories.length === 0 ? (
+              <TableRow className="border-white/10 hover:bg-white/5">
+                <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                  Belum ada kategori yang ditambahkan.
+                </TableCell>
+              </TableRow>
+            ) : (
+              initialCategories.map((category) => {
+                const isSelected = selected.has(category.id);
+                return (
+                  <TableRow
+                    key={category.id}
+                    className={cn("border-white/10 hover:bg-white/5", isSelected && "bg-[#33A5D3]/5")}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleOne(category.id)}
+                        aria-label={`Pilih ${category.name}`}
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium text-white">{category.name}</TableCell>
+                    <TableCell className="text-gray-400 font-mono text-sm">{category.slug}</TableCell>
+                    <TableCell className="text-gray-400 text-right text-sm">
+                      {format(category.createdAt, "dd MMM yyyy", { locale: id })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleOpenForm(category)}
+                          className="h-8 w-8 text-[#33A5D3] hover:text-[#33A5D3] hover:bg-[#33A5D3]/10"
+                          title="Edit Kategori"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleConfirmDeleteClick(category)}
+                          disabled={isFetchingImpact || isPending}
+                          className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                          title="Hapus Kategori"
+                        >
+                          {isFetchingImpact && deletingCategory?.id === category.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+        <div className="px-4 py-3 border-t border-white/10 flex justify-end">
+          <p className="text-xs text-gray-500">
+            Total <span className="text-gray-300 font-medium">{initialCategories.length}</span> kategori
+          </p>
+        </div>
       </div>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
@@ -161,40 +284,40 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
               <Label htmlFor="name" className="text-gray-300">
                 Nama Kategori <span className="text-gray-500 text-xs font-normal ml-1">(harus unik)</span>
               </Label>
-              <Input 
-                id="name" 
+              <Input
+                id="name"
                 required
-                value={name} 
+                value={name}
                 onChange={(e) => handleNameChange(e.target.value)}
-                className="bg-white/5 border-white/10 text-white focus-visible:ring-[#33A5D3]" 
+                className="bg-white/5 border-white/10 text-white focus-visible:ring-[#33A5D3]"
                 placeholder="Misal: Kaos, Topi"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="slug" className="text-gray-300">Tipe / Slug Produk (URL)</Label>
-              <Input 
-                id="slug" 
+              <Input
+                id="slug"
                 required
-                value={slug} 
+                value={slug}
                 onChange={(e) => setSlug(e.target.value)}
-                className="bg-white/5 border-white/10 text-white focus-visible:ring-[#33A5D3]" 
+                className="bg-white/5 border-white/10 text-white focus-visible:ring-[#33A5D3]"
                 placeholder="misal: kaos"
               />
               <p className="text-xs text-gray-500">
                 Digunakan untuk mengelompokkan kategori ke tipe yang sama (misal: pakaian, aksesoris). Boleh sama dengan kategori lain.
               </p>
             </div>
-            
+
             {formError && <p className="text-red-400 text-sm">{formError}</p>}
-            
-            <div className="pt-4 flex justify-end gap-2">
+
+            <DialogFooter className="pt-2">
               <Button type="button" variant="ghost" onClick={() => setIsFormOpen(false)} className="hover:bg-white/5 hover:text-white text-gray-400">
                 Batal
               </Button>
               <Button type="submit" disabled={isPending} className="bg-[#33A5D3] hover:bg-[#33A5D3]/90 text-black font-bold min-w-[100px]">
                 {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Simpan"}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
@@ -211,7 +334,7 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
                 </span>
               ) : impactCount !== null ? (
                 <span className="block mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-md text-red-400">
-                  Peringatan: Kategori ini sedang digunakan oleh <strong>{impactCount} produk</strong>. 
+                  Peringatan: Kategori ini sedang digunakan oleh <strong>{impactCount} produk</strong>.
                   Jika dihapus, produk-produk tersebut akan menjadi "Tanpa Kategori".
                 </span>
               ) : null}
@@ -221,7 +344,7 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
             <AlertDialogCancel disabled={isPending || isFetchingImpact} className="bg-transparent border-white/10 hover:bg-white/5 hover:text-white text-gray-300">
               Batal
             </AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
                 executeDelete();
@@ -235,68 +358,31 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="bg-[#111111] border border-white/5 rounded-2xl overflow-hidden">
-        <Table>
-          <TableHeader className="bg-black/20 hover:bg-black/20">
-            <TableRow className="border-white/10 hover:bg-transparent">
-              <TableHead className="text-gray-400 font-medium">Nama Kategori</TableHead>
-              <TableHead className="text-gray-400 font-medium">Slug</TableHead>
-              <TableHead className="text-gray-400 font-medium text-right">Ditambahkan</TableHead>
-              <TableHead className="text-gray-400 font-medium text-right w-[100px]">Aksi</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {initialCategories.length === 0 ? (
-              <TableRow className="border-white/10 hover:bg-white/5">
-                <TableCell colSpan={4} className="text-center py-8 text-gray-500">
-                  Belum ada kategori yang ditambahkan.
-                </TableCell>
-              </TableRow>
-            ) : (
-              initialCategories.map((category) => (
-                <TableRow key={category.id} className="border-white/10 hover:bg-white/5">
-                  <TableCell className="font-medium text-white">
-                    {category.name}
-                  </TableCell>
-                  <TableCell className="text-gray-400 font-mono text-sm">
-                    {category.slug}
-                  </TableCell>
-                  <TableCell className="text-gray-400 text-right text-sm">
-                    {format(category.createdAt, "dd MMM yyyy", { locale: id })}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handleOpenForm(category)}
-                        className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10"
-                        title="Edit Kategori"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handleConfirmDeleteClick(category)}
-                        disabled={isFetchingImpact || isPending}
-                        className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-400/10"
-                        title="Hapus Kategori"
-                      >
-                        {isFetchingImpact && deletingCategory?.id === category.id ? (
-                           <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                           <Trash2 className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <AlertDialog open={isBulkDeleteOpen} onOpenChange={(open) => !open && setIsBulkDeleteOpen(false)}>
+        <AlertDialogContent className="bg-[#111111] border-white/10 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus {selectedCount} kategori?</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
+              Kategori yang dipilih akan dihapus. Produk yang terkait akan menjadi "Tanpa Kategori".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting} className="bg-transparent border-white/10 hover:bg-white/5 hover:text-white text-gray-300">
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmBulkDelete();
+              }}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Hapus"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

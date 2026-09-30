@@ -3,11 +3,11 @@
 import { db } from "@/db"
 import { merch_product_sizes } from "@/db/schema"
 import { eq } from "drizzle-orm"
-import { requireUser, revalidateAll } from "./_guards"
+import { requireAdmin, revalidateAll } from "./_guards"
 import { SizeFormData } from "../types"
 
 export async function getProductSizes(productId: number) {
-  await requireUser();
+  await requireAdmin();
 
   const sizes = await db
     .select()
@@ -19,7 +19,7 @@ export async function getProductSizes(productId: number) {
 }
 
 export async function syncProductSizes(productId: number, sizes: SizeFormData[]) {
-  await requireUser();
+  await requireAdmin();
 
   // 1. Normalisasi ukuran dan pengecekan duplikasi
   const seenSizes = new Set<string>();
@@ -37,18 +37,15 @@ export async function syncProductSizes(productId: number, sizes: SizeFormData[])
   });
 
   // 2. Operasi Database
-  // Menyiapkan op penghapusan baris ukuran lama
-  const deleteOp = db.delete(merch_product_sizes).where(eq(merch_product_sizes.productId, productId));
-  
   if (normalizedSizes.length === 0) {
-      await deleteOp;
+    await db.delete(merch_product_sizes).where(eq(merch_product_sizes.productId, productId));
   } else {
-      // Menyiapkan op penambahan baris ukuran baru
-      const insertOp = db.insert(merch_product_sizes).values(normalizedSizes);
-      
-      // db.batch() untuk memastikan sifat atomik.
-      // Jika insertOp gagal, maka deleteOp ikut di-rollback.
-      await db.batch([deleteOp, insertOp]);
+    // db.transaction() untuk memastikan sifat atomik.
+    // Jika insert gagal, maka delete ikut di-rollback.
+    await db.transaction(async (tx) => {
+      await tx.delete(merch_product_sizes).where(eq(merch_product_sizes.productId, productId));
+      await tx.insert(merch_product_sizes).values(normalizedSizes);
+    });
   }
 
   revalidateAll();

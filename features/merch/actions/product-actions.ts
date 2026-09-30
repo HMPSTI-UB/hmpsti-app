@@ -1,14 +1,20 @@
 "use server"
 
 import { db } from "@/db"
-import { merch_categories, merch_products, merch_product_sizes, merch_product_images } from "@/db/schema"
-import { eq, count, ilike, and, desc, sql, inArray } from "drizzle-orm"
-import { requireUser, revalidateAll } from "./_guards"
+import { merch_categories, merch_products, merch_product_sizes, merch_product_variants, merch_product_images } from "@/db/schema"
+import { eq, count, ilike, and, desc, inArray } from "drizzle-orm"
+import { requireAdmin, revalidateAll } from "./_guards"
 import { ProductFormData, ProductQueryParams } from "../types"
 import { deleteImageFromCloudinary } from "./upload-actions"
 import { recordAuditLog } from "./audit-log-actions"
 
-import { calculateAvailability } from "../utils"
+import { formatPriceRange } from "../utils"
+import {
+  getRemovedImageUrls,
+  insertProduct,
+  updateProductData,
+  validateProductPayload,
+} from "./product-core"
 
 export async function getAdminProducts({
   page = 1,
@@ -17,7 +23,7 @@ export async function getAdminProducts({
   categoryId,
   availability,
 }: ProductQueryParams = {}) {
-  await requireUser();
+  await requireAdmin();
 
   const conditions = [];
 
@@ -39,8 +45,10 @@ export async function getAdminProducts({
       categoryId: merch_products.categoryId,
       categoryName: merch_categories.name,
       name: merch_products.name,
+      description: merch_products.description,
       price: merch_products.price,
       hasSizes: merch_products.hasSizes,
+      hasVariants: merch_products.hasVariants,
       stock: merch_products.stock,
       availabilityType: merch_products.availabilityType,
       createdAt: merch_products.createdAt,
@@ -86,18 +94,84 @@ export async function getAdminProducts({
       .orderBy(merch_product_images.displayOrder);
   }
 
+  let allVariants: { productId: number; price: number | null }[] = [];
+  if (productIds.length > 0) {
+    allVariants = await db
+      .select({ productId: merch_product_variants.productId, price: merch_product_variants.price })
+      .from(merch_product_variants)
+      .where(inArray(merch_product_variants.productId, productIds));
+  }
+
   const products = rawProducts.map((p) => {
+    const variants = allVariants.filter((v) => v.productId === p.id);
+    const range = p.hasVariants ? formatPriceRange(p.price, variants) : null;
     return {
       ...p,
       images: allImages.filter((img) => img.productId === p.id).map((img) => img.imageUrl),
+      priceFrom: range?.from ?? null,
+      priceTo: range?.to ?? null,
     };
   });
 
   return { products, total };
 }
 
+export async function getAdminProductById(id: number) {
+  await requireAdmin();
+
+  const [product] = await db
+    .select({
+      id: merch_products.id,
+      categoryId: merch_products.categoryId,
+      categoryName: merch_categories.name,
+      name: merch_products.name,
+      description: merch_products.description,
+      price: merch_products.price,
+      hasSizes: merch_products.hasSizes,
+      hasVariants: merch_products.hasVariants,
+      stock: merch_products.stock,
+      availabilityType: merch_products.availabilityType,
+      createdAt: merch_products.createdAt,
+    })
+    .from(merch_products)
+    .leftJoin(merch_categories, eq(merch_products.categoryId, merch_categories.id))
+    .where(eq(merch_products.id, id))
+    .limit(1);
+
+  if (!product) return null;
+
+  const images = await db
+    .select({ imageUrl: merch_product_images.imageUrl })
+    .from(merch_product_images)
+    .where(eq(merch_product_images.productId, id))
+    .orderBy(merch_product_images.displayOrder);
+
+  const sizes = await db
+    .select({ id: merch_product_sizes.id, sizeName: merch_product_sizes.sizeName, stock: merch_product_sizes.stock })
+    .from(merch_product_sizes)
+    .where(eq(merch_product_sizes.productId, id));
+
+  const variants = await db
+    .select({
+      id: merch_product_variants.id,
+      name: merch_product_variants.name,
+      price: merch_product_variants.price,
+      stock: merch_product_variants.stock,
+      imageUrl: merch_product_variants.imageUrl,
+    })
+    .from(merch_product_variants)
+    .where(eq(merch_product_variants.productId, id));
+
+  return {
+    ...product,
+    images: images.map((i) => i.imageUrl),
+    sizes,
+    variants,
+  };
+}
+
 export async function getProductSizes(productId: number) {
-  await requireUser();
+  await requireAdmin();
   const sizes = await db
     .select({
       sizeName: merch_product_sizes.sizeName,
@@ -110,67 +184,25 @@ export async function getProductSizes(productId: number) {
 }
 
 export async function createProduct(data: ProductFormData) {
-  const user = await requireUser();
+  const user = await requireAdmin();
   const adminName = user.name || "Admin";
 
-  if (!data.images || data.images.length < 2 || data.images.length > 4) {
-    return { error: "Produk harus memiliki antara 2 hingga 4 gambar." };
-  }
-
-  if (data.hasSizes) {
-    if (!data.sizes || data.sizes.length === 0) {
-      return { error: "Produk dengan ukuran harus memiliki minimal 1 varian ukuran." };
-    }
-    const sizeNames = data.sizes.map((s) => s.sizeName.toLowerCase());
-    const uniqueSizeNames = new Set(sizeNames);
-    if (uniqueSizeNames.size !== sizeNames.length) {
-      return { error: "Terdapat nama ukuran yang duplikat. Nama ukuran harus unik." };
-    }
-  }
+  const validationError = validateProductPayload(data);
+  if (validationError) return { error: validationError };
 
   let insertedProductId: number | null = null;
 
   try {
-    const availabilityType = calculateAvailability(data.hasSizes, data.stock, data.forcePreorder);
-    const finalStock = data.hasSizes ? null : (data.stock ?? 0);
-
-    const [product] = await db.insert(merch_products).values({
-      categoryId: data.categoryId,
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      hasSizes: data.hasSizes,
-      stock: finalStock,
-      availabilityType,
-    }).returning({ id: merch_products.id });
-
-    insertedProductId = product.id;
-
-    const imageValues = data.images.map((url, index) => ({
-      productId: product.id,
-      imageUrl: url,
-      displayOrder: index + 1,
-    }));
-
-    await db.insert(merch_product_images).values(imageValues);
-
-    if (data.hasSizes && data.sizes) {
-      const sizeValues = data.sizes.map((s) => ({
-        productId: product.id,
-        sizeName: s.sizeName,
-        stock: s.stock === "" ? 0 : s.stock,
-      }));
-      await db.insert(merch_product_sizes).values(sizeValues);
-    }
+    insertedProductId = await insertProduct(data, null);
 
     await recordAuditLog(
       user.id!,
       "product",
-      product.id,
+      insertedProductId,
       "CREATE",
       `${adminName} menambahkan produk "${data.name}"`
     );
-  } catch (err) {
+  } catch {
     if (insertedProductId) {
       // Rollback: Cloudinary -> Database
       for (const url of data.images) {
@@ -182,7 +214,7 @@ export async function createProduct(data: ProductFormData) {
       }
       try {
         await db.delete(merch_products).where(eq(merch_products.id, insertedProductId));
-      } catch (rollbackErr) {
+      } catch {
         return { error: "Gagal menyimpan data DAN gagal membatalkan produk. Terdapat produk sisa (orphan), mohon cek manual." };
       }
       return { error: "Gagal menyimpan ukuran atau gambar. Produk berhasil dibatalkan." };
@@ -194,83 +226,30 @@ export async function createProduct(data: ProductFormData) {
 }
 
 export async function updateProduct(id: number, data: ProductFormData) {
-  const user = await requireUser();
+  const user = await requireAdmin();
   const adminName = user.name || "Admin";
 
-  if (!data.images || data.images.length < 2 || data.images.length > 4) {
-    return { error: "Produk harus memiliki antara 2 hingga 4 gambar." };
-  }
-
-  if (data.hasSizes) {
-    if (!data.sizes || data.sizes.length === 0) {
-      return { error: "Produk dengan ukuran harus memiliki minimal 1 varian ukuran." };
-    }
-    const sizeNames = data.sizes.map((s) => s.sizeName.toLowerCase());
-    const uniqueSizeNames = new Set(sizeNames);
-    if (uniqueSizeNames.size !== sizeNames.length) {
-      return { error: "Terdapat nama ukuran yang duplikat. Nama ukuran harus unik." };
-    }
-  }
+  const validationError = validateProductPayload(data);
+  if (validationError) return { error: validationError };
 
   try {
-    const availabilityType = calculateAvailability(data.hasSizes, data.stock, data.forcePreorder);
-    const finalStock = data.hasSizes ? null : (data.stock ?? 0);
-
     const [oldProduct] = await db.select().from(merch_products).where(eq(merch_products.id, id)).limit(1);
     if (!oldProduct) return { error: "Produk tidak ditemukan." };
 
-    const oldImages = await db.select({ imageUrl: merch_product_images.imageUrl }).from(merch_product_images).where(eq(merch_product_images.productId, id));
-    
-    // Find images that were deleted from UI and remove them from Cloudinary
-    const newImageSet = new Set(data.images);
-    const imagesToDelete = oldImages.map(img => img.imageUrl).filter(url => !newImageSet.has(url));
-
-    for (const url of imagesToDelete) {
-      await deleteImageFromCloudinary(url).catch(console.error); // Catch individually to not block the DB update if Cloudinary fails, or we can throw. Let's catch so it doesn't block update.
+    // Hapus gambar (produk & varian) yang sudah tidak dipakai dari Cloudinary
+    const removed = await getRemovedImageUrls(id, data);
+    for (const url of [...removed.productImages, ...removed.variantImages]) {
+      await deleteImageFromCloudinary(url).catch(console.error);
     }
 
-    const updateOp = db.update(merch_products)
-      .set({
-        categoryId: data.categoryId,
-        name: data.name,
-        description: data.description,
-        price: data.price,
-        hasSizes: data.hasSizes,
-        stock: finalStock,
-        availabilityType,
-        updatedAt: sql`now()`,
-      })
-      .where(eq(merch_products.id, id));
-
-    const imageValues = data.images.map((url, index) => ({
-      productId: id,
-      imageUrl: url,
-      displayOrder: index + 1,
-    }));
-
-    const deleteOldImagesOp = db.delete(merch_product_images).where(eq(merch_product_images.productId, id));
-    const insertNewImagesOp = db.insert(merch_product_images).values(imageValues);
-
-    const deleteSizesOp = db.delete(merch_product_sizes).where(eq(merch_product_sizes.productId, id));
-    
-    if (!data.hasSizes) {
-      await db.batch([updateOp, deleteOldImagesOp, insertNewImagesOp, deleteSizesOp]);
-    } else {
-      const sizeValues = (data.sizes || []).map((s) => ({
-        productId: id,
-        sizeName: s.sizeName,
-        stock: s.stock === "" ? 0 : s.stock,
-      }));
-      const insertNewSizesOp = db.insert(merch_product_sizes).values(sizeValues);
-      
-      await db.batch([updateOp, deleteOldImagesOp, insertNewImagesOp, deleteSizesOp, insertNewSizesOp]);
-    }
+    await updateProductData(id, data);
 
     const changes = [];
     if (oldProduct.name !== data.name) changes.push(`Nama (${oldProduct.name} -> ${data.name})`);
     if (oldProduct.price !== data.price) changes.push(`Harga (Rp${oldProduct.price} -> Rp${data.price})`);
-    if (oldProduct.hasSizes !== data.hasSizes) changes.push(`Varian Ukuran (${oldProduct.hasSizes} -> ${data.hasSizes})`);
-    if (!data.hasSizes && oldProduct.stock !== data.stock) changes.push(`Stok (${oldProduct.stock} -> ${data.stock})`);
+    if (oldProduct.hasSizes !== data.hasSizes) changes.push(`Ukuran (${oldProduct.hasSizes} -> ${data.hasSizes})`);
+    if (oldProduct.hasVariants !== data.hasVariants) changes.push(`Varian (${oldProduct.hasVariants} -> ${data.hasVariants})`);
+    if (!data.hasSizes && !data.hasVariants && oldProduct.stock !== data.stock) changes.push(`Stok (${oldProduct.stock} -> ${data.stock})`);
 
     const changesText = changes.length > 0 ? changes.join(", ") : "Tidak ada perubahan";
 
@@ -281,7 +260,7 @@ export async function updateProduct(id: number, data: ProductFormData) {
       "UPDATE",
       `${adminName} memperbarui produk "${oldProduct.name}". Perubahan: ${changesText}`
     );
-  } catch (err) {
+  } catch {
     return { error: "Terjadi kesalahan saat memperbarui produk." };
   }
 
@@ -289,31 +268,50 @@ export async function updateProduct(id: number, data: ProductFormData) {
 }
 
 export async function deleteProduct(id: number) {
-  const user = await requireUser();
+  return deleteManyProducts([id]);
+}
+
+export async function deleteManyProducts(ids: number[]) {
+  const user = await requireAdmin();
   const adminName = user.name || "Admin";
 
+  if (ids.length === 0) return { error: "Tidak ada produk yang dipilih." };
+
   try {
-    const productImages = await db.select({ imageUrl: merch_product_images.imageUrl })
+    const products = await db
+      .select({ id: merch_products.id, name: merch_products.name })
+      .from(merch_products)
+      .where(inArray(merch_products.id, ids));
+
+    if (products.length === 0) return { error: "Produk tidak ditemukan." };
+
+    const foundIds = products.map((p) => p.id);
+
+    const images = await db
+      .select({ imageUrl: merch_product_images.imageUrl })
       .from(merch_product_images)
-      .where(eq(merch_product_images.productId, id));
+      .where(inArray(merch_product_images.productId, foundIds));
 
-    const productRows = await db.select({ id: merch_products.id, name: merch_products.name }).from(merch_products).where(eq(merch_products.id, id)).limit(1);
-    if (productRows.length === 0) return { error: "Produk tidak ditemukan." };
-    const productName = productRows[0].name;
+    const variantImages = await db
+      .select({ imageUrl: merch_product_variants.imageUrl })
+      .from(merch_product_variants)
+      .where(inArray(merch_product_variants.productId, foundIds));
 
-    for (const img of productImages) {
-      await deleteImageFromCloudinary(img.imageUrl);
+    for (const img of [...images, ...variantImages]) {
+      if (img.imageUrl) await deleteImageFromCloudinary(img.imageUrl).catch(console.error);
     }
 
-    await db.delete(merch_products).where(eq(merch_products.id, id));
+    await db.delete(merch_products).where(inArray(merch_products.id, foundIds));
 
-    await recordAuditLog(
-      user.id!,
-      "product",
-      id,
-      "DELETE",
-      `${adminName} menghapus produk "${productName}"`
-    );
+    for (const product of products) {
+      await recordAuditLog(
+        user.id!,
+        "product",
+        product.id,
+        "DELETE",
+        `${adminName} menghapus produk "${product.name}"`
+      );
+    }
   } catch {
     return { error: "Gagal menghapus produk atau gambar terkait dari Cloudinary." };
   }

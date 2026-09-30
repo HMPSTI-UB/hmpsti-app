@@ -3,6 +3,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShoppingBag, Trash2, Plus, Minus, MessageCircle } from "lucide-react";
 import { useCart } from "../context/cart-context";
+import { variantPrice } from "../utils";
+import { requireClientAuth } from "../utils/require-auth";
 import { cn } from "@/lib/utils";
 
 export function CartDrawer({
@@ -15,14 +17,19 @@ export function CartDrawer({
   const { items, removeFromCart, updateQuantity, totalPrice, totalItems } =
     useCart();
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (items.length === 0) return;
+
+    const ok = await requireClientAuth("/checkout");
+    if (!ok) return;
 
     // Build WhatsApp message
     let message = `Halo Admin, saya ingin memesan merch:\n\n`;
     items.forEach((item, index) => {
+      const unitPrice = variantPrice(item.selectedVariant, item.product.price);
       const sizeStr = item.selectedSize ? ` (Ukuran: ${item.selectedSize.sizeName})` : "";
-      message += `${index + 1}. ${item.product.name}${sizeStr} x${item.quantity} = Rp ${(item.product.price * item.quantity).toLocaleString("id-ID")}\n`;
+      const variantStr = item.selectedVariant ? ` (Varian: ${item.selectedVariant.name})` : "";
+      message += `${index + 1}. ${item.product.name}${sizeStr}${variantStr} x${item.quantity} = Rp ${(unitPrice * item.quantity).toLocaleString("id-ID")}\n`;
     });
     message += `\n*Total Item:* ${totalItems}\n*Total Harga:* Rp ${totalPrice.toLocaleString("id-ID")}\n\nMohon informasi pembayarannya. Terima kasih!`;
 
@@ -109,11 +116,14 @@ export function CartDrawer({
                         </button>
                       </div>
                       <p className="text-gray-400 text-xs mb-2">
-                        {item.selectedSize ? `Ukuran: ${item.selectedSize.sizeName}` : "Aksesoris"}
+                        {item.selectedSize ? `Ukuran: ${item.selectedSize.sizeName}` : ""}
+                        {item.selectedSize && item.selectedVariant ? " · " : ""}
+                        {item.selectedVariant ? `Varian: ${item.selectedVariant.name}` : ""}
+                        {!item.selectedSize && !item.selectedVariant ? "Aksesoris" : ""}
                       </p>
                       <div className="mt-auto flex items-center justify-between">
                         <span className="text-[#33A5D3] font-black text-sm">
-                          Rp {(item.product.price * item.quantity).toLocaleString("id-ID")}
+                          Rp {(variantPrice(item.selectedVariant, item.product.price) * item.quantity).toLocaleString("id-ID")}
                         </span>
                         
                         <div className="flex items-center gap-3 bg-black/50 px-2 py-1 rounded-lg border border-white/10">

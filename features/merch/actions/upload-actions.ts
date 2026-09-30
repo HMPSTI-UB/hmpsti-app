@@ -1,7 +1,7 @@
 "use server"
 
 import { v2 as cloudinary } from 'cloudinary';
-import { requireUser } from "./_guards";
+import { requireAdminOrMerchant } from "./_guards";
 
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -10,7 +10,7 @@ cloudinary.config({
 });
 
 export async function deleteImageFromCloudinary(imageUrl: string) {
-  await requireUser();
+  await requireAdminOrMerchant();
 
   if (!imageUrl) return;
 
@@ -37,4 +37,28 @@ export async function deleteImageFromCloudinary(imageUrl: string) {
     console.error("Failed to delete image from Cloudinary:", error);
     throw new Error("Gagal menghapus gambar produk di Cloudinary");
   }
+}
+export async function uploadImageToCloudinary(formData: FormData) {
+  await requireAdminOrMerchant();
+
+  const file = formData.get('file') as File;
+  if (!file) throw new Error("File tidak ditemukan.");
+
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  return new Promise<{ secure_url: string }>((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder: 'assets/hmpsti/merch' },
+      (error, result) => {
+        if (error || !result) {
+          reject(error || new Error("Gagal mengunggah gambar ke Cloudinary."));
+        } else {
+          resolve({ secure_url: result.secure_url });
+        }
+      }
+    );
+
+    uploadStream.end(buffer);
+  });
 }

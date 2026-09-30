@@ -1,186 +1,230 @@
-import { Users, Vote, Calendar, Clock, ArrowRight, Star, LayoutDashboard } from "lucide-react";
+import {
+  Users,
+  Package,
+  ClipboardList,
+  Wallet,
+  Activity,
+  ArrowRight,
+  Plus,
+  Pencil,
+  Trash2,
+  CheckCircle2,
+  XCircle,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
-import { getDashboardStats } from "@/features/pameran-iot/actions/dashboard-actions";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { getDashboardStats } from "@/features/dashboard/actions/dashboard-actions";
+import { cn } from "@/lib/utils";
+
+const rupiah = (n: number) => `Rp ${n.toLocaleString("id-ID")}`;
+
+const statusMeta: Record<string, string> = {
+  MENUNGGU_VERIFIKASI: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  TERVERIFIKASI: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  DITOLAK: "bg-red-500/10 text-red-400 border-red-500/20",
+};
+
+const statusLabel: Record<string, string> = {
+  MENUNGGU_VERIFIKASI: "Menunggu",
+  TERVERIFIKASI: "Terverifikasi",
+  DITOLAK: "Ditolak",
+};
+
+const actionMeta: Record<string, { icon: LucideIcon; className: string }> = {
+  CREATE: { icon: Plus, className: "bg-emerald-500/10 text-emerald-400" },
+  UPDATE: { icon: Pencil, className: "bg-[#33A5D3]/10 text-[#33A5D3]" },
+  DELETE: { icon: Trash2, className: "bg-red-500/10 text-red-400" },
+  VERIFY: { icon: CheckCircle2, className: "bg-emerald-500/10 text-emerald-400" },
+  REJECT: { icon: XCircle, className: "bg-red-500/10 text-red-400" },
+};
 
 export default async function DashboardPage() {
   const stats = await getDashboardStats();
 
   return (
-    <div className="p-8">
-      <header className="flex justify-between items-center mb-8">
+    <div>
+      <header className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-white">Dashboard Overview</h2>
-          <p className="text-gray-400 text-sm mt-1">Status sistem voting Pameran IoT saat ini</p>
+          <h2 className="text-2xl font-bold tracking-tight text-white">Dashboard Overview</h2>
+          <p className="text-gray-400 text-sm mt-1">Ringkasan aktivitas sistem HMPSTI UB</p>
         </div>
-        <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
-          A
-        </div>
+        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-gray-500">
+          {format(new Date(), "EEEE, dd MMMM yyyy", { locale: id })}
+        </p>
       </header>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="bg-white/5 border border-white/10 p-6 rounded-2xl hover:bg-white/10 transition-all group">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-gray-400 text-sm font-medium">Total Tim IoT</h3>
-              <p className="text-4xl font-bold mt-2 text-white">{stats.totalTeams}</p>
-            </div>
-            <div className="p-3 bg-blue-500/10 rounded-xl group-hover:bg-blue-500/20 transition-colors">
-              <Users className="h-6 w-6 text-blue-400" />
-            </div>
-          </div>
-          <Link href="/dashboard/iot-teams" className="inline-flex items-center text-xs text-blue-400 mt-4 hover:underline">
-            Kelola tim <ArrowRight className="h-3 w-3 ml-1" />
-          </Link>
-        </div>
-
-        <div className="bg-white/5 border border-white/10 p-6 rounded-2xl hover:bg-white/10 transition-all group">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-gray-400 text-sm font-medium">Total Vote Masuk</h3>
-              <p className="text-4xl font-bold mt-2 text-white">{stats.totalVotes.toLocaleString('id-ID')}</p>
-            </div>
-            <div className="p-3 bg-green-500/10 rounded-xl group-hover:bg-green-500/20 transition-colors">
-              <Vote className="h-6 w-6 text-green-400" />
-            </div>
-          </div>
-          <Link href="/dashboard/vote-monitor" className="inline-flex items-center text-xs text-green-400 mt-4 hover:underline">
-            Lihat perolehan <ArrowRight className="h-3 w-3 ml-1" />
-          </Link>
-        </div>
-
-        <div className="bg-white/5 border border-white/10 p-6 rounded-2xl hover:bg-white/10 transition-all group">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-gray-400 text-sm font-medium">Sesi Aktif</h3>
-              <div className="mt-2 flex flex-col">
-                {stats.activeSession ? (
-                  <>
-                    <p className="text-xl font-bold text-white line-clamp-1">{stats.activeSession.name}</p>
-                    <div className="flex items-center gap-1.5 mt-1 text-xs text-green-400">
-                      <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                      Sedang Berjalan
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-xl font-bold text-gray-500">Tidak Ada</p>
-                    <p className="text-xs text-gray-400 mt-1">Menunggu jadwal berikutnya</p>
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="p-3 bg-purple-500/10 rounded-xl group-hover:bg-purple-500/20 transition-colors">
-              <Calendar className="h-6 w-6 text-purple-400" />
-            </div>
-          </div>
-          <Link href="/dashboard/vote-sessions" className="inline-flex items-center text-xs text-purple-400 mt-4 hover:underline">
-            Atur jadwal <ArrowRight className="h-3 w-3 ml-1" />
-          </Link>
-        </div>
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <StatCard
+          href="/dashboard/settings"
+          label="Pengguna"
+          value={stats.totalUsers.toLocaleString("id-ID")}
+          caption="Akun terdaftar"
+          icon={Users}
+        />
+        <StatCard
+          href="/dashboard/merch/products"
+          label="Produk"
+          value={stats.totalProducts.toLocaleString("id-ID")}
+          caption={`${stats.totalCategories.toLocaleString("id-ID")} kategori`}
+          icon={Package}
+        />
+        <StatCard
+          href="/dashboard/merch/orders"
+          label="Pesanan"
+          value={stats.totalOrders.toLocaleString("id-ID")}
+          caption={
+            stats.pendingOrders > 0 ? (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                {stats.pendingOrders.toLocaleString("id-ID")} menunggu verifikasi
+              </span>
+            ) : (
+              "Tidak ada antrean"
+            )
+          }
+          icon={ClipboardList}
+        />
+        <StatCard
+          href="/dashboard/merch/orders"
+          label="Pendapatan"
+          value={rupiah(stats.verifiedRevenue)}
+          caption="Pesanan terverifikasi"
+          icon={Wallet}
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-        {/* Recent Activity */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-medium text-white">Vote Terbaru</h3>
-            <Link href="/dashboard/vote-monitor">
-              <Button variant="ghost" size="sm" className="text-xs text-gray-400 hover:text-white">
-                Lihat Semua
-              </Button>
+      {/* Panels */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-8">
+        <section className="lg:col-span-3 bg-[#0D0E11] border border-white/10 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
+              <Activity className="h-4 w-4 text-[#33A5D3]" strokeWidth={1.75} />
+              Aktivitas Terbaru
+            </h3>
+            <Link
+              href="/dashboard/merch/audit-logs"
+              className="text-xs text-gray-500 hover:text-[#33A5D3] transition-colors"
+            >
+              Lihat Semua
             </Link>
           </div>
-          <div className="space-y-4">
-            {stats.recentVotes.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 italic text-sm">
-                Belum ada aktivitas vote masuk.
-              </div>
-            ) : (
-              stats.recentVotes.map((vote) => (
-                <div key={vote.id} className="flex items-center gap-4 py-3 border-b border-white/5 last:border-0 hover:bg-white/5 rounded-lg px-2 transition-colors group">
-                  <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0 group-hover:bg-green-500/20 transition-colors">
-                    <Star className="h-5 w-5 text-green-400" />
-                  </div>
+
+          {stats.recentActivity.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-gray-500 text-sm">Belum ada aktivitas tercatat.</p>
+              <p className="text-xs text-gray-600 mt-1">Aktivitas admin (tambah/ubah produk, verifikasi pesanan, dll.) akan muncul di sini.</p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-white/5">
+              {stats.recentActivity.map((log) => {
+                const meta = actionMeta[log.action] ?? actionMeta.UPDATE;
+                const Icon = meta.icon;
+                return (
+                  <li key={log.id} className="flex items-start gap-3 py-3">
+                    <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", meta.className)}>
+                      <Icon className="h-4 w-4" strokeWidth={1.75} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-300 leading-snug line-clamp-2">{log.message}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {log.adminName ?? "Admin"} ·{" "}
+                        {formatDistanceToNow(log.createdAt, { addSuffix: true, locale: id })}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
+        <section className="lg:col-span-2 bg-[#0D0E11] border border-white/10 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
+              <ClipboardList className="h-4 w-4 text-[#33A5D3]" strokeWidth={1.75} />
+              Pesanan Terbaru
+            </h3>
+            <Link
+              href="/dashboard/merch/orders"
+              className="text-xs text-gray-500 hover:text-[#33A5D3] transition-colors"
+            >
+              Lihat Semua
+            </Link>
+          </div>
+
+          {stats.recentOrders.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-gray-500 text-sm">Belum ada pesanan masuk.</p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-white/5">
+              {stats.recentOrders.map((order) => (
+                <li key={order.id} className="flex items-center gap-3 py-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white truncate">
-                      <span className="text-blue-400 font-semibold">{vote.voterName || "Anonim"}</span> memberikan suara
+                      {order.orderCode} · {order.buyerName}
                     </p>
-                    <p className="text-xs text-gray-400 truncate mt-0.5">
-                      Tim: <span className="text-gray-300">[{vote.teamCode}] {vote.teamTitle}</span>
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[10px] text-gray-500 font-mono">
-                      {format(vote.votedAt, "HH:mm:ss", { locale: id })}
-                    </p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">
-                      {format(vote.votedAt, "dd MMM", { locale: id })}
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {formatDistanceToNow(order.createdAt, { addSuffix: true, locale: id })}
                     </p>
                   </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* System Status / Quick Info */}
-        <div className="space-y-6">
-          <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
-             <div className="relative z-10">
-                <h3 className="text-lg font-medium text-white mb-2">Live Monitor</h3>
-                <p className="text-gray-300 text-sm mb-6">
-                  Pantau perolehan suara secara real-time dan ekspor data laporan hasil voting tim IoT.
-                </p>
-                <Link href="/dashboard/vote-monitor">
-                  <Button className="bg-white text-black hover:bg-gray-200 transition-colors">
-                    Buka Monitoring
-                  </Button>
-                </Link>
-             </div>
-             {/* Decorative element */}
-             <div className="absolute -right-8 -bottom-8 opacity-10">
-                <LayoutDashboard className="h-40 w-40 text-white" />
-             </div>
-          </div>
-
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-            <h3 className="text-sm font-medium text-gray-400 mb-4 flex items-center gap-2">
-              <Clock className="h-4 w-4" /> Informasi Sesi
-            </h3>
-            {stats.activeSession ? (
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-400">Dimulai</span>
-                  <span className="text-white font-medium">{format(stats.activeSession.startTime, "HH:mm", { locale: id })} WIB</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-400">Berakhir</span>
-                  <span className="text-white font-medium">{format(stats.activeSession.endTime, "HH:mm", { locale: id })} WIB</span>
-                </div>
-                <div className="pt-2">
-                  <Badge className="w-full justify-center bg-green-500/20 text-green-400 border-green-500/30">
-                    Sesi Sedang Aktif
-                  </Badge>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-gray-500 text-sm italic">Tidak ada sesi yang berjalan saat ini.</p>
-                <Link href="/dashboard/vote-sessions">
-                  <Button variant="link" className="text-xs text-blue-400 h-auto p-0 mt-2">
-                    Mulai Sesi Sekarang
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
+                  <span className="text-sm font-semibold text-white shrink-0">{rupiah(order.totalAmount)}</span>
+                  <span
+                    className={cn(
+                      "inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border shrink-0",
+                      statusMeta[order.status],
+                    )}
+                  >
+                    {statusLabel[order.status]}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  caption,
+  icon: Icon,
+  href,
+}: {
+  label: string;
+  value: React.ReactNode;
+  caption: React.ReactNode;
+  icon: LucideIcon;
+  href: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0D0E11] p-5 hover:border-white/20 hover:-translate-y-0.5 transition-all duration-200"
+    >
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#33A5D3]/60 to-transparent" />
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-gray-500">{label}</p>
+          <p className="mt-2 text-3xl font-black tracking-tight text-white truncate">{value}</p>
+        </div>
+        <div className="h-10 w-10 rounded-xl bg-[#33A5D3]/10 flex items-center justify-center shrink-0 group-hover:bg-[#33A5D3]/20 transition-colors">
+          <Icon className="h-5 w-5 text-[#33A5D3]" strokeWidth={1.75} />
+        </div>
+      </div>
+      <div className="mt-4 flex items-center justify-between gap-2">
+        <span className="text-xs text-gray-500">{caption}</span>
+        <span className="inline-flex items-center gap-1 text-xs text-gray-500 group-hover:text-[#33A5D3] transition-colors shrink-0">
+          Kelola
+          <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" strokeWidth={2} />
+        </span>
+      </div>
+    </Link>
   );
 }

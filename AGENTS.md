@@ -37,7 +37,7 @@ Every agent working in this repo MUST follow these rules. When they conflict wit
 - **Public vote pages**: must `export const dynamic = "force-dynamic"` + `revalidate = 0`.
 - **Tailwind v4**: do NOT use `data-[state=open]:slide-in-from-*` on Dialog/AlertDialog (jumps to top-left). Use fade/zoom only.
 - **Server action = public POST endpoint** → always `await auth()` + check authorization inside every action that needs protection. (Public voting intentionally has no `auth()` — a deliberate decision.)
-- **Neon HTTP driver**: interactive transactions (`db.transaction`) are NOT supported. Use `db.batch([...])` when needed.
+- **DB driver (node-postgres)**: `db` is `drizzle-orm/node-postgres` (Pool). Interactive transactions (`db.transaction`) ARE supported — use them for multi-statement atomicity. `db.batch()` is NOT available on this driver. Local dev DB = Docker Postgres (`docker compose up -d`, see `DATABASE_URL`); production = Neon via Vercel env.
 - After a mutation that affects rendered pages, call `revalidatePath()`.
 
 ## 4. DB Migrations
@@ -69,12 +69,12 @@ hmpsti-app/
 │   ├── (public)/                 # Public routes (no auth)
 │   │   ├── page.tsx              #   landing
 │   │   ├── departemen/ struktur/ kalender/ merch/
-│   │   └── pameran-iot/          #   catalog, [id] detail, vote/, live/
+│   │   └── pameran/             #   catalog, [id] detail, vote/, live/
 │   ├── dashboard/                # Admin routes (auth-gated)
-│   │   ├── iot-teams/ vote-sessions/ vote-monitor/ settings/
+│   │   ├── teams/ vote-sessions/ vote-monitor/ site-settings/ settings/
 │   │   └── layout.tsx
-│   ├── auth/login/               # Sign-in page
-│   ├── api/auth/[...nextauth]/   # NextAuth route handler (the one API route)
+│   ├── auth/                     # NextAuth route handler + auth UI
+│   │   ├── [...nextauth]/  login/  redirect/
 │   └── layout.tsx
 │
 ├── features/                     # Feature-first modules — the real code
@@ -85,16 +85,16 @@ hmpsti-app/
 │       ├── hooks/                #   feature-scoped hooks (e.g. use-pagination)
 │       ├── types.ts              #   domain types derived from action return types
 │       └── schemas.ts            #   zod schemas (where used, e.g. auth)
-│   # existing features: pameran-iot, merch, auth, landing, departments,
-│   #   organization, calendar, announcement, not-found
+│   # existing features: pameran, merch, auth, landing, departments,
+│   #   organization, calendar, announcement, not-found, site-settings
 │
 ├── components/                   # Shared/global components
 │   ├── ui/                       #   Shadcn UI primitives (button, dialog, table…)
 │   └── Navbar / Footer / Header / SidebarNav / AspirasiFab …
 │
-├── db/                           # Drizzle + Neon
-│   ├── index.ts                  #   db client (neon-http)
-│   ├── schema.ts                 #   tables: users, vote_sessions, iot_teams, votes
+├── db/                           # Drizzle + Postgres (node-postgres driver)
+│   ├── index.ts                  #   db client (pg Pool, drizzle-orm/node-postgres)
+│   ├── schema.ts                 #   tables: users, vote_sessions, teams, votes, site_settings
 │   ├── migrations/               #   drizzle-kit generated SQL (don't hand-edit)
 │   └── seed.ts / seed-teams.ts
 │
@@ -113,7 +113,7 @@ hmpsti-app/
 
 **Where does new code go?**
 
-- New mutation/query → `features/<feature>/actions/`. Guard with `requireUser()` from that feature's `actions/_guards.ts` (pameran-iot has one; add per feature or promote to `lib/` if shared).
+- New mutation/query → `features/<feature>/actions/`. Guard with `requireUser()` from that feature's `actions/_guards.ts` (pameran has one; add per feature or promote to `lib/` if shared).
 - New client UI for a feature → `features/<feature>/components/`. A route renders it via a wrapper in `features/<feature>/pages/`.
 - Reusable across features → `lib/` (functions), `hooks/` (hooks), `components/` (UI), `types/` (types).
 - New DB table/column → `db/schema.ts`, then generate + migrate (§4).
@@ -127,15 +127,16 @@ hmpsti-app/
 - **Next.js 16.2.9** (App Router, Turbopack), **React 19**, **Tailwind CSS v4**, **Drizzle ORM** + **Neon PostgreSQL**
 - Auth: `next-auth` v5 beta (JWT strategy). Admin routes di `app/dashboard/`, public routes di `app/(public)/`
 - UI: **Shadcn UI** (dark mode). Dialog/AlertDialog sudah dihapus class `slide-in/out` karena bentrok Tailwind v4 → animasi pakai fade/zoom dari tengah saja
-- Semua server actions di `features/pameran-iot/actions/`
-- Semua komponen client di `features/pameran-iot/components/`
-- Semua page wrapper di `features/pameran-iot/pages/`
+- Semua server actions di `features/pameran/actions/`
+- Semua komponen client di `features/pameran/components/`
+- Semua page wrapper di `features/pameran/pages/`
 
 ## Schema DB (`db/schema.ts`)
 
 - `vote_sessions` → id (serial PK), name, start_time (timestamp), end_time (timestamp)
-- `iot_teams` → id, code (unique), class_name, group_number, title, team_members, banner_image_url, project_image_url, session_id (FK → vote_sessions)
-- `votes` → id, team_id (FK → iot_teams), session_id (FK → vote_sessions), voter_name (nullable), message (nullable), voted_at
+- `teams` → id, code (unique), class_name, group_number, title, team_members, banner_image_url, project_image_url, session_id (FK → vote_sessions)
+- `votes` → id, team_id (FK → teams), session_id (FK → vote_sessions), voter_name (nullable), message (nullable), voted_at
+- `site_settings` → id (serial PK), show_pameran (boolean, default true), updated_at (timestamp) — **single-row**; toggle publish Pameran. Admin UI di `features/site-settings/` (`app/dashboard/site-settings/page.tsx`). Ketika `show_pameran=false`: halaman publik `/pameran`, `/pameran/[id]`, `/pameran/vote`, `/pameran/live` → `notFound()`; Navbar menyembunyikan link via `getPublicSiteSettings()` (server action publik, dipanggil client-side agar landing tetap `force-static`); modul admin tetap tampil. Setelah toggle → `revalidatePath` semua route pameran.
 
 ## Fitur yang Sudah Selesai
 

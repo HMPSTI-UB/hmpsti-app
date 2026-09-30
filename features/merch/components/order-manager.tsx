@@ -377,6 +377,9 @@ export function OrderManager({
                               {item.sizeNameSnapshot && (
                                 <div className="text-xs text-gray-400">Ukuran: {item.sizeNameSnapshot}</div>
                               )}
+                              {item.variantNameSnapshot && (
+                                <div className="text-xs text-gray-400">Varian: {item.variantNameSnapshot}</div>
+                              )}
                               <div className="text-xs text-gray-500">@ Rp {item.productPriceSnapshot.toLocaleString("id-ID")}</div>
                             </TableCell>
                             <TableCell className="text-right text-sm">{item.quantity}</TableCell>

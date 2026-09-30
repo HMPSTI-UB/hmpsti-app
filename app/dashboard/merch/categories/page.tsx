@@ -1,9 +1,5 @@
-import { CategoryPage } from "@/features/merch/pages/category-page";
-
-export const metadata = {
-  title: "Kelola Kategori Merch - Admin HMPSTI",
-};
+import { permanentRedirect } from "next/navigation";
 
 export default function AdminCategoriesRoute() {
-  return <CategoryPage />;
+  permanentRedirect("/dashboard/merch/products?tab=kategori");
 }

@@ -18,9 +18,11 @@ export type ProductFormData = {
   price: number;
   images: string[];
   hasSizes: boolean;
+  hasVariants: boolean;
   stock: number | null;
   forcePreorder?: boolean;
   sizes?: SizeFormData[];
+  variants?: VariantFormData[];
 };
 
 export type SizeFormData = {
@@ -30,10 +32,50 @@ export type SizeFormData = {
   _isCustom?: boolean;
 };
 
+export type VariantFormData = {
+  name: string;
+  price: number | "";
+  stock: number | "";
+  imageUrl?: string;
+  _id?: string;
+  _isCustom?: boolean;
+};
+
+export type CategoryOption = {
+  id: number;
+  name: string;
+  slug: string;
+};
+
+export type AdminProduct = {
+  id: number;
+  categoryId: number | null;
+  categoryName: string | null;
+  name: string;
+  description: string | null;
+  price: number;
+  images: string[];
+  hasSizes: boolean;
+  hasVariants: boolean;
+  stock: number | null;
+  availabilityType: "ready" | "out_of_stock" | "preorder";
+  createdAt: Date;
+  priceFrom?: number | null;
+  priceTo?: number | null;
+};
+
 export type PublicProductSize = {
   id: number;
   sizeName: string;
   stock: number | null;
+};
+
+export type PublicProductVariant = {
+  id: number;
+  name: string;
+  price: number | null;
+  stock: number;
+  imageUrl: string | null;
 };
 
 export type PublicProduct = {
@@ -46,7 +88,11 @@ export type PublicProduct = {
   price: number;
   images: string[];
   hasSizes: boolean;
+  hasVariants: boolean;
   stock: number | null;
   availabilityType: "ready" | "out_of_stock" | "preorder";
   sizes: PublicProductSize[];
+  variants: PublicProductVariant[];
+  priceFrom: number | null;
+  priceTo: number | null;
 };

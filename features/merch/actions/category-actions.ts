@@ -2,13 +2,13 @@
 
 import { db } from "@/db"
 import { merch_categories, merch_products } from "@/db/schema"
-import { eq, count } from "drizzle-orm"
-import { requireUser, revalidateAll } from "./_guards"
+import { eq, count, inArray } from "drizzle-orm"
+import { requireAdmin, requireUser, revalidateAll } from "./_guards"
 import { CategoryFormData } from "../types"
 import { recordAuditLog } from "./audit-log-actions"
 
 export async function getAdminCategories() {
-  await requireUser();
+  await requireAdmin();
   
   const rows = await db
     .select()
@@ -18,8 +18,23 @@ export async function getAdminCategories() {
   return rows;
 }
 
-export async function getCategoryImpact(id: number): Promise<number> {
+/**
+ * Daftar kategori untuk dipilih merchant saat membuat produk (read-only).
+ * Kategori tetap dikelola admin.
+ */
+export async function getSelectableCategories() {
   await requireUser();
+
+  const rows = await db
+    .select()
+    .from(merch_categories)
+    .orderBy(merch_categories.name);
+
+  return rows;
+}
+
+export async function getCategoryImpact(id: number): Promise<number> {
+  await requireAdmin();
   
   const [{ total }] = await db
     .select({ total: count(merch_products.id) })
@@ -30,7 +45,7 @@ export async function getCategoryImpact(id: number): Promise<number> {
 }
 
 export async function createCategory(data: CategoryFormData) {
-  const user = await requireUser();
+  const user = await requireAdmin();
   const adminName = user.name || "Admin";
   
   try {
@@ -54,7 +69,7 @@ export async function createCategory(data: CategoryFormData) {
 }
 
 export async function updateCategory(id: number, data: CategoryFormData) {
-  const user = await requireUser();
+  const user = await requireAdmin();
   const adminName = user.name || "Admin";
   
   try {
@@ -89,7 +104,7 @@ export async function updateCategory(id: number, data: CategoryFormData) {
 }
 
 export async function deleteCategory(id: number) {
-  const user = await requireUser();
+  const user = await requireAdmin();
   const adminName = user.name || "Admin";
   
   try {
@@ -111,5 +126,39 @@ export async function deleteCategory(id: number) {
     return { error: "Terjadi kesalahan saat menghapus kategori." };
   }
   
+  revalidateAll();
+}
+
+export async function deleteManyCategories(ids: number[]) {
+  const user = await requireAdmin();
+  const adminName = user.name || "Admin";
+
+  if (ids.length === 0) return { error: "Tidak ada kategori yang dipilih." };
+
+  try {
+    const categories = await db
+      .select({ id: merch_categories.id, name: merch_categories.name })
+      .from(merch_categories)
+      .where(inArray(merch_categories.id, ids));
+
+    if (categories.length === 0) return { error: "Kategori tidak ditemukan." };
+
+    await db
+      .delete(merch_categories)
+      .where(inArray(merch_categories.id, categories.map((c) => c.id)));
+
+    for (const category of categories) {
+      await recordAuditLog(
+        user.id!,
+        "category",
+        category.id,
+        "DELETE",
+        `${adminName} menghapus kategori "${category.name}"`
+      );
+    }
+  } catch {
+    return { error: "Terjadi kesalahan saat menghapus kategori." };
+  }
+
   revalidateAll();
 }

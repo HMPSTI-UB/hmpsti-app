@@ -1,4 +1,4 @@
-import AdminSessionsPage from "@/features/pameran-iot/pages/admin-sessions-page";
+import AdminSessionsPage from "@/features/pameran/pages/admin-sessions-page";
 
 export const dynamic = "force-dynamic";
 

@@ -3,6 +3,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, ArrowRight, Plus, Minus } from "lucide-react";
 import { useCart } from "../context/cart-context";
+import { variantPrice } from "../utils";
+import { requireClientAuth } from "../utils/require-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
@@ -32,7 +34,9 @@ export function CartPopup({
     };
   }, [isOpen, onClose]);
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
+    const ok = await requireClientAuth("/checkout");
+    if (!ok) return;
     onClose();
     router.push("/checkout"); // Arahkan ke halaman baru
   };
@@ -76,6 +80,13 @@ export function CartPopup({
                     <h4 className="font-bold text-sm line-clamp-1">
                       {item.product.name}
                     </h4>
+                    {(item.selectedSize || item.selectedVariant) && (
+                      <p className="text-[11px] text-gray-400 mt-0.5 truncate">
+                        {item.selectedSize ? `Ukuran: ${item.selectedSize.sizeName}` : ""}
+                        {item.selectedSize && item.selectedVariant ? " · " : ""}
+                        {item.selectedVariant ? `Varian: ${item.selectedVariant.name}` : ""}
+                      </p>
+                    )}
                     <div className="flex items-center gap-3 mt-2">
                       <div className="flex items-center gap-2 bg-white/5 px-2 py-1 rounded border border-white/10">
                         <button
@@ -94,8 +105,8 @@ export function CartPopup({
                           <Plus size={12} />
                         </button>
                       </div>
-                      <span className="text-sm font-bold text-white">
-                        Rp. {(item.product.price * item.quantity).toLocaleString("id-ID")}
+                      <span className="text-sm font-bold text-[#F56C6C]">
+                        Rp. {(variantPrice(item.selectedVariant, item.product.price) * item.quantity).toLocaleString("id-ID")}
                       </span>
                     </div>
                   </div>
@@ -115,7 +126,7 @@ export function CartPopup({
             <div className="p-4 bg-[#1A1A1A]">
               <div className="flex justify-between items-center mb-4 font-bold">
                 <span>Total</span>
-                <span className="text-white">
+                <span className="text-[#F56C6C]">
                   Rp. {totalPrice.toLocaleString("id-ID")}
                 </span>
               </div>

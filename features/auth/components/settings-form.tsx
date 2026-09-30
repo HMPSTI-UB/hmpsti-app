@@ -5,17 +5,20 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { settingsSchema, type SettingsSchema } from "../schemas";
 import { updateProfile } from "../actions/update-profile";
-import { Lock, Mail, User, ShieldCheck, Save, Loader2 } from "lucide-react";
+import { Lock, Mail, User, ShieldCheck, Save, Loader2, Phone, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 interface SettingsFormProps {
   user: {
     name?: string | null;
     email?: string | null;
+    phone?: string | null;
+    address?: string | null;
   };
+  hasPassword?: boolean;
 }
 
-export function SettingsForm({ user }: SettingsFormProps) {
+export function SettingsForm({ user, hasPassword = true }: SettingsFormProps) {
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
@@ -29,6 +32,8 @@ export function SettingsForm({ user }: SettingsFormProps) {
     defaultValues: {
       name: user.name || "",
       email: user.email || "",
+      phone: user.phone || "",
+      address: user.address || "",
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
@@ -42,6 +47,8 @@ export function SettingsForm({ user }: SettingsFormProps) {
         const result = await updateProfile({
           name: data.name,
           email: data.email,
+          phone: data.phone || undefined,
+          address: data.address || undefined,
           currentPassword: data.currentPassword || undefined,
           newPassword: data.newPassword || undefined,
         });
@@ -120,6 +127,47 @@ export function SettingsForm({ user }: SettingsFormProps) {
                   <p className="text-xs text-red-500">{errors.email.message}</p>
                 )}
               </div>
+
+              <div className="space-y-2">
+                <label htmlFor="phone" className="text-sm font-medium text-gray-400">
+                  Nomor WhatsApp
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Phone className="h-4 w-4 text-gray-500" />
+                  </div>
+                  <input
+                    id="phone"
+                    {...register("phone")}
+                    className={`block w-full pl-10 bg-white/5 border ${errors.phone ? 'border-red-500' : 'border-white/10'} rounded-xl py-2.5 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm`}
+                    placeholder="08xxxxxxxxxx"
+                  />
+                </div>
+                {errors.phone && (
+                  <p className="text-xs text-red-500">{errors.phone.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label htmlFor="address" className="text-sm font-medium text-gray-400">
+                  Alamat Lengkap
+                </label>
+                <div className="relative">
+                  <div className="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
+                    <MapPin className="h-4 w-4 text-gray-500" />
+                  </div>
+                  <textarea
+                    id="address"
+                    rows={3}
+                    {...register("address")}
+                    className={`block w-full pl-10 bg-white/5 border ${errors.address ? 'border-red-500' : 'border-white/10'} rounded-xl py-2.5 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm resize-none`}
+                    placeholder="Digunakan untuk mengisi otomatis alamat pengiriman saat checkout"
+                  />
+                </div>
+                {errors.address && (
+                  <p className="text-xs text-red-500">{errors.address.message}</p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -132,31 +180,34 @@ export function SettingsForm({ user }: SettingsFormProps) {
               Keamanan & Password
             </h3>
             <p className="text-xs text-gray-500 italic">
-              *Kosongkan password baru jika tidak ingin mengubah password. 
-              Password saat ini diperlukan jika Anda mengubah email atau password.
+              {hasPassword
+                ? "*Kosongkan password baru jika tidak ingin mengubah password. Password saat ini diperlukan jika Anda mengubah email atau password."
+                : "*Akun ini belum memiliki password (login via Google). Isi password baru jika ingin bisa login dengan email juga."}
             </p>
             
             <div className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="currentPassword" className="text-sm font-medium text-gray-400">
-                  Password Saat Ini
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <ShieldCheck className="h-4 w-4 text-gray-500" />
+              {hasPassword && (
+                <div className="space-y-2">
+                  <label htmlFor="currentPassword" className="text-sm font-medium text-gray-400">
+                    Password Saat Ini
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <ShieldCheck className="h-4 w-4 text-gray-500" />
+                    </div>
+                    <input
+                      id="currentPassword"
+                      type="password"
+                      {...register("currentPassword")}
+                      className={`block w-full pl-10 bg-white/5 border ${errors.currentPassword ? 'border-red-500' : 'border-white/10'} rounded-xl py-2.5 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm`}
+                      placeholder="••••••••"
+                    />
                   </div>
-                  <input
-                    id="currentPassword"
-                    type="password"
-                    {...register("currentPassword")}
-                    className={`block w-full pl-10 bg-white/5 border ${errors.currentPassword ? 'border-red-500' : 'border-white/10'} rounded-xl py-2.5 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm`}
-                    placeholder="••••••••"
-                  />
+                  {errors.currentPassword && (
+                    <p className="text-xs text-red-500">{errors.currentPassword.message}</p>
+                  )}
                 </div>
-                {errors.currentPassword && (
-                  <p className="text-xs text-red-500">{errors.currentPassword.message}</p>
-                )}
-              </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">

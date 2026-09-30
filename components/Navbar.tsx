@@ -9,6 +9,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { brandLogo, navLinks } from "@/constant/data";
+import { Button } from "@/components/ui/button";
+import { getPublicSiteSettings } from "@/features/site-settings/actions/site-settings-actions";
+import { getSessionStatus } from "@/features/auth/actions/session-status";
 
 // Fungsi Utility
 export function cn(...inputs: ClassValue[]) {
@@ -18,6 +21,10 @@ export function cn(...inputs: ClassValue[]) {
 export const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showPameran, setShowPameran] = useState(true);
+  const [session, setSession] = useState<{ authenticated: boolean; role?: string }>({
+    authenticated: false,
+  });
   const pathname = usePathname();
 
   useEffect(() => {
@@ -25,6 +32,31 @@ export const Navbar = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPublicSiteSettings().then((value) => {
+      if (!cancelled) setShowPameran(value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    getSessionStatus().then((value) => {
+      if (!cancelled) setSession(value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
+  const accountHref = session.role === "admin" ? "/dashboard" : "/account";
+  const accountLabel = session.role === "admin" ? "Dashboard" : "Akun";
+
+  const visibleLinks = showPameran ? navLinks : navLinks.filter((l) => l.path !== "/pameran");
 
   return (
     <>
@@ -59,7 +91,7 @@ export const Navbar = () => {
 
           {/* MENU DESKTOP */}
           <div className="hidden md:flex items-center gap-8 ml-auto">
-            {navLinks.map((link) => (
+            {visibleLinks.map((link) => (
               <Link
                 key={link.name}
                 href={link.path}
@@ -81,6 +113,17 @@ export const Navbar = () => {
                 ></span>
               </Link>
             ))}
+
+            <Button
+              asChild
+              variant="primary"
+              size="sm"
+              className="rounded-full font-mono text-[11px] font-bold uppercase tracking-widest"
+            >
+              <Link href={session.authenticated ? accountHref : "/auth/login"}>
+                {session.authenticated ? accountLabel : "Masuk"}
+              </Link>
+            </Button>
           </div>
 
           {/* TOMBOL MENU MOBILE */}
@@ -102,7 +145,7 @@ export const Navbar = () => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[90] bg-[#050505]/95 backdrop-blur-xl flex flex-col justify-center items-center gap-8"
           >
-            {navLinks.map((link) => (
+            {visibleLinks.map((link) => (
               <Link
                 key={link.name}
                 href={link.path}
@@ -112,6 +155,20 @@ export const Navbar = () => {
                 {link.name}
               </Link>
             ))}
+
+            <Button
+              asChild
+              variant="primary"
+              size="sm"
+              className="rounded-full font-mono text-xs font-bold uppercase tracking-widest"
+            >
+              <Link
+                href={session.authenticated ? accountHref : "/auth/login"}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {session.authenticated ? accountLabel : "Masuk"}
+              </Link>
+            </Button>
           </motion.div>
         )}
       </AnimatePresence>

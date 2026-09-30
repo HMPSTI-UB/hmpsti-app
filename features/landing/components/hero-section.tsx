@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowUpRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -56,20 +57,24 @@ export function HeroSection() {
           </motion.div>
 
           <motion.div variants={itemVariants} className="md:col-span-6 lg:col-span-5 lg:col-start-8 flex flex-wrap gap-4 justify-start md:justify-end">
-            <Link
-              href="/departemen"
-              className="group inline-flex items-center gap-3 px-8 py-4 bg-white text-black hover:bg-[#33A5D3] hover:text-white rounded-full font-mono text-xs font-bold uppercase tracking-widest transition-all duration-300"
+            <Button
+              asChild
+              variant="primary"
+              className="group h-auto gap-3 rounded-full px-8 py-4 font-mono text-xs font-bold uppercase tracking-widest transition-all duration-300"
             >
-              Jelajahi Divisi
-              <ArrowUpRight size={14} className="group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform duration-300" />
-            </Link>
+              <Link href="/departemen">
+                Jelajahi Divisi
+                <ArrowUpRight size={14} className="group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform duration-300" />
+              </Link>
+            </Button>
 
-            <a
-              href="#tentang"
-              className="px-8 py-4 bg-transparent hover:bg-white/5 text-white rounded-full font-mono text-xs font-bold uppercase tracking-widest border border-white/10 transition-all duration-300"
+            <Button
+              asChild
+              variant="ghost"
+              className="h-auto gap-3 rounded-full border border-white/10 px-8 py-4 font-mono text-xs font-bold uppercase tracking-widest text-white transition-all duration-300 hover:bg-white/5 hover:text-white"
             >
-              Tentang Kabinet
-            </a>
+              <a href="#tentang">Tentang Kabinet</a>
+            </Button>
           </motion.div>
         </div>
       </motion.div>

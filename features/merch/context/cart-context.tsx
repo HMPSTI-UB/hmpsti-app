@@ -1,18 +1,25 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import type { PublicProduct, PublicProductSize } from "../types";
+import type { PublicProduct, PublicProductSize, PublicProductVariant } from "../types";
+import { variantPrice } from "../utils";
 
 export type CartItem = {
   id: string;
   product: PublicProduct;
   quantity: number;
   selectedSize?: PublicProductSize;
+  selectedVariant?: PublicProductVariant;
 };
 
 type CartContextType = {
   items: CartItem[];
-  addToCart: (product: PublicProduct, quantity: number, selectedSize?: PublicProductSize) => void;
+  addToCart: (
+    product: PublicProduct,
+    quantity: number,
+    selectedSize?: PublicProductSize,
+    selectedVariant?: PublicProductVariant
+  ) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -53,17 +60,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Calculate totals
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
+    (sum, item) => sum + variantPrice(item.selectedVariant, item.product.price) * item.quantity,
     0
   );
 
   const addToCart = (
     product: PublicProduct,
     quantity: number,
-    selectedSize?: PublicProductSize
+    selectedSize?: PublicProductSize,
+    selectedVariant?: PublicProductVariant
   ) => {
     setItems((prevItems) => {
-      const id = `${product.id}-${selectedSize ? selectedSize.id : "nosize"}`;
+      const id = `${product.id}-${selectedVariant ? `v${selectedVariant.id}` : "novar"}-${selectedSize ? `s${selectedSize.id}` : "nosize"}`;
       const existingItem = prevItems.find((item) => item.id === id);
 
       if (existingItem) {
@@ -74,7 +82,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         );
       }
 
-      return [...prevItems, { id, product, quantity, selectedSize }];
+      return [...prevItems, { id, product, quantity, selectedSize, selectedVariant }];
     });
   };
 

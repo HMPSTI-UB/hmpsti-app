@@ -3,10 +3,10 @@
 import { db } from "@/db"
 import { merch_products, merch_categories, merch_orders } from "@/db/schema"
 import { sql } from "drizzle-orm"
-import { requireUser } from "./_guards"
+import { requireAdmin } from "./_guards"
 
 export async function getMerchDashboardStats() {
-  await requireUser();
+  await requireAdmin();
 
   const [totalProductsCount, totalCategoriesCount, orderStats] = await Promise.all([
     db.select({ count: sql<number>`count(*)::int` }).from(merch_products),
@@ -46,7 +46,7 @@ export async function getMerchDashboardStats() {
 }
 
 export async function getMonthlySalesStats() {
-  await requireUser();
+  await requireAdmin();
   const currentYear = new Date().getFullYear();
 
   const stats = await db

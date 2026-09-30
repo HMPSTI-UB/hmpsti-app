@@ -9,6 +9,8 @@ import { revalidatePath } from "next/cache"
 export async function updateProfile(data: { 
   name: string; 
   email: string; 
+  phone?: string;
+  address?: string;
   currentPassword?: string; 
   newPassword?: string; 
 }) {
@@ -28,8 +30,11 @@ export async function updateProfile(data: {
     throw new Error("User not found");
   }
 
-  // If trying to change password or email, require current password
-  if (data.newPassword || data.email !== currentUser.email) {
+  // OAuth-only accounts have no password yet; they may set one (or change
+  // their email) without providing a current password.
+  const hasPassword = !!currentUser.password;
+
+  if (hasPassword && (data.newPassword || data.email !== currentUser.email)) {
     if (!data.currentPassword) {
       throw new Error("Password saat ini diperlukan untuk mengubah email atau password.");
     }
@@ -43,6 +48,8 @@ export async function updateProfile(data: {
   const updateData: any = {
     name: data.name,
     email: data.email,
+    phone: data.phone || null,
+    address: data.address || null,
     updatedAt: new Date(),
   };
 
@@ -56,6 +63,7 @@ export async function updateProfile(data: {
       .where(eq(users.id, userId));
     
     revalidatePath("/dashboard/settings");
+    revalidatePath("/account/settings");
     return { success: true };
   } catch (error: any) {
     if (error.code === '23505') { // Postgres unique constraint error code

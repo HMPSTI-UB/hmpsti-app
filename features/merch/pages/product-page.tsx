@@ -1,47 +1,27 @@
 import { getAdminProducts } from "../actions/product-actions";
 import { getAdminCategories } from "../actions/category-actions";
-import { ProductManager } from "../components/product-manager";
+import { MerchManager, type MerchTab } from "../components/merch-manager";
 
 type Props = {
   searchParams: {
-    page?: string;
-    limit?: string;
-    search?: string;
-    category?: string;
-    availability?: string;
+    tab?: string;
   };
 };
 
 export async function ProductPage({ searchParams }: Props) {
-  const page = searchParams.page ? parseInt(searchParams.page, 10) : 1;
-  const limit = searchParams.limit === "ALL" ? "ALL" : searchParams.limit ? parseInt(searchParams.limit, 10) : 10;
-  const search = searchParams.search || "";
-  const categoryId = searchParams.category ? parseInt(searchParams.category, 10) : undefined;
-  const availability = (searchParams.availability as "ready" | "out_of_stock" | "preorder") || undefined;
+  const initialTab: MerchTab = searchParams.tab === "kategori" ? "kategori" : "produk";
 
-  // Fetch initial data concurrently
   const [productsData, categories] = await Promise.all([
-    getAdminProducts({
-      page,
-      pageSize: limit,
-      search,
-      categoryId,
-      availability,
-    }),
+    getAdminProducts({ pageSize: "ALL" }),
     getAdminCategories(),
   ]);
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 md:px-8">
-      <ProductManager 
-        initialProducts={productsData.products} 
-        totalProducts={productsData.total}
+    <div className="max-w-7xl mx-auto py-6 md:py-8 px-4 md:px-8">
+      <MerchManager
+        initialTab={initialTab}
+        initialProducts={productsData.products}
         categories={categories}
-        currentPage={page}
-        currentLimit={limit}
-        currentSearch={search}
-        currentCategoryId={categoryId}
-        currentAvailability={availability}
       />
     </div>
   );

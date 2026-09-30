@@ -9,12 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { PaginationBar } from "@/features/pameran-iot/components/pagination-bar";
+import { PaginationBar } from "@/features/pameran/components/pagination-bar";
 
 type AuditLog = {
   id: number;
   adminId: string | null;
-  entity: "category" | "product" | "order";
+  entity: "category" | "product" | "order" | "merchant" | "payment_account";
   entityId: number | null;
   action: "CREATE" | "UPDATE" | "DELETE" | "VERIFY" | "REJECT";
   message: string;

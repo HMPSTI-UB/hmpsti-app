@@ -1,9 +1,10 @@
 "use server"
 
 import { db } from "@/db"
-import { merch_categories, merch_products, merch_product_sizes, merch_product_images } from "@/db/schema"
+import { merch_categories, merch_products, merch_product_sizes, merch_product_variants, merch_product_images } from "@/db/schema"
 import { eq, inArray, desc } from "drizzle-orm"
-import { PublicProduct, PublicProductSize } from "../types"
+import { PublicProduct, PublicProductSize, PublicProductVariant } from "../types"
+import { formatPriceRange } from "../utils"
 
 export async function getPublicCategories() {
   return await db.select().from(merch_categories).orderBy(desc(merch_categories.id));
@@ -20,6 +21,7 @@ export async function getPublicProducts(): Promise<PublicProduct[]> {
       description: merch_products.description,
       price: merch_products.price,
       hasSizes: merch_products.hasSizes,
+      hasVariants: merch_products.hasVariants,
       stock: merch_products.stock,
       availabilityType: merch_products.availabilityType,
     })
@@ -51,15 +53,39 @@ export async function getPublicProducts(): Promise<PublicProduct[]> {
       .where(inArray(merch_product_sizes.productId, productIds));
   }
 
-  return productsRows.map((p) => ({
-    ...p,
-    images: allImages.filter((img) => img.productId === p.id).map((img) => img.imageUrl),
-    sizes: allSizes.filter((s) => s.productId === p.id).map((s) => ({
-      id: s.id,
-      sizeName: s.sizeName,
-      stock: s.stock,
-    })),
-  }));
+  let allVariants: { productId: number; id: number; name: string; price: number | null; stock: number; imageUrl: string | null }[] = [];
+  if (productIds.length > 0) {
+    allVariants = await db
+      .select({
+        productId: merch_product_variants.productId,
+        id: merch_product_variants.id,
+        name: merch_product_variants.name,
+        price: merch_product_variants.price,
+        stock: merch_product_variants.stock,
+        imageUrl: merch_product_variants.imageUrl,
+      })
+      .from(merch_product_variants)
+      .where(inArray(merch_product_variants.productId, productIds));
+  }
+
+  return productsRows.map((p) => {
+    const variants: PublicProductVariant[] = allVariants
+      .filter((v) => v.productId === p.id)
+      .map((v) => ({ id: v.id, name: v.name, price: v.price, stock: v.stock, imageUrl: v.imageUrl }));
+    const range = p.hasVariants ? formatPriceRange(p.price, variants) : null;
+    return {
+      ...p,
+      images: allImages.filter((img) => img.productId === p.id).map((img) => img.imageUrl),
+      sizes: allSizes.filter((s) => s.productId === p.id).map((s) => ({
+        id: s.id,
+        sizeName: s.sizeName,
+        stock: s.stock,
+      })),
+      variants,
+      priceFrom: range?.from ?? null,
+      priceTo: range?.to ?? null,
+    };
+  });
 }
 
 export async function getPublicProductById(id: number): Promise<PublicProduct | null> {
@@ -73,6 +99,7 @@ export async function getPublicProductById(id: number): Promise<PublicProduct | 
       description: merch_products.description,
       price: merch_products.price,
       hasSizes: merch_products.hasSizes,
+      hasVariants: merch_products.hasVariants,
       stock: merch_products.stock,
       availabilityType: merch_products.availabilityType,
     })
@@ -98,14 +125,37 @@ export async function getPublicProductById(id: number): Promise<PublicProduct | 
     .from(merch_product_sizes)
     .where(eq(merch_product_sizes.productId, id));
 
+  const variants = await db
+    .select({
+      id: merch_product_variants.id,
+      name: merch_product_variants.name,
+      price: merch_product_variants.price,
+      stock: merch_product_variants.stock,
+      imageUrl: merch_product_variants.imageUrl,
+    })
+    .from(merch_product_variants)
+    .where(eq(merch_product_variants.productId, id));
+
+  const publicVariants: PublicProductVariant[] = variants.map((v) => ({
+    id: v.id,
+    name: v.name,
+    price: v.price,
+    stock: v.stock,
+    imageUrl: v.imageUrl,
+  }));
+  const range = productRow.hasVariants ? formatPriceRange(productRow.price, publicVariants) : null;
+
   return {
     ...productRow,
-    images: images.map(img => img.imageUrl),
-    sizes: sizes.map(s => ({
+    images: images.map((img) => img.imageUrl),
+    sizes: sizes.map((s) => ({
       id: s.id,
       sizeName: s.sizeName,
       stock: s.stock,
     })),
+    variants: publicVariants,
+    priceFrom: range?.from ?? null,
+    priceTo: range?.to ?? null,
   };
 }
 
