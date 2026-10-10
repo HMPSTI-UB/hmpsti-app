@@ -63,7 +63,7 @@ export default function Checkout() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [isProofOpen, setIsProofOpen] = useState(false);
-  const [isQrisOpen, setIsQrisOpen] = useState(false);
+  const [qrisPreviewUrl, setQrisPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -458,11 +458,23 @@ export default function Checkout() {
                         }`}
                       >
                         {account.type === "qris" && account.qrisImgUrl ? (
-                          <img
-                            src={account.qrisImgUrl}
-                            alt={account.bankName}
-                            className="w-14 h-14 rounded-lg bg-white object-contain shrink-0"
-                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setQrisPreviewUrl(account.qrisImgUrl);
+                            }}
+                            className="group relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-white cursor-zoom-in"
+                          >
+                            <img
+                              src={account.qrisImgUrl}
+                              alt={account.bankName}
+                              className="h-14 w-14 object-contain"
+                            />
+                            <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                              <Maximize2 size={16} className="text-white" />
+                            </span>
+                          </button>
                         ) : (
                           <div className="w-14 h-9 bg-white rounded flex items-center justify-center overflow-hidden shrink-0">
                             <span className="text-[10px] font-black uppercase text-black text-center px-1">
@@ -732,7 +744,7 @@ export default function Checkout() {
                     <>
                       <button
                         type="button"
-                        onClick={() => setIsQrisOpen(true)}
+                        onClick={() => setQrisPreviewUrl(selectedAccount.qrisImgUrl)}
                         className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-white cursor-zoom-in"
                       >
                         <img
@@ -744,17 +756,6 @@ export default function Checkout() {
                           <Maximize2 size={20} className="text-white" />
                         </span>
                       </button>
-
-                      <Dialog open={isQrisOpen} onOpenChange={setIsQrisOpen}>
-                        <DialogContent className="max-w-3xl border-white/10 bg-[#0D0E11] p-3 [&>button]:!text-black [&>button]:hover:!text-black/70">
-                          <DialogTitle className="sr-only">Tujuan Pembayaran</DialogTitle>
-                          <img
-                            src={selectedAccount.qrisImgUrl}
-                            alt={selectedAccount.bankName}
-                            className="mx-auto max-h-[80vh] w-full rounded-lg bg-white object-contain"
-                          />
-                        </DialogContent>
-                      </Dialog>
                     </>
                   ) : (
                     <div className="flex h-12 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white px-2">
@@ -887,6 +888,23 @@ export default function Checkout() {
             </div>
           </div>
         )}
+
+        {/* Shared QRIS preview (Step 1 & Step 2) */}
+        <Dialog
+          open={!!qrisPreviewUrl}
+          onOpenChange={(open) => !open && setQrisPreviewUrl(null)}
+        >
+          <DialogContent className="max-w-3xl border-white/10 bg-[#0D0E11] p-3 [&>button]:!text-black [&>button]:hover:!text-black/70">
+            <DialogTitle className="sr-only">Tujuan Pembayaran</DialogTitle>
+            {qrisPreviewUrl && (
+              <img
+                src={qrisPreviewUrl}
+                alt="Tujuan Pembayaran"
+                className="mx-auto max-h-[80vh] w-full rounded-lg bg-white object-contain"
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
