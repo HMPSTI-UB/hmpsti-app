@@ -12,6 +12,7 @@ import {
   Wallet,
   ShoppingBag,
   RefreshCw,
+  Maximize2,
   ChevronLeft,
   ChevronRight,
   Store,
@@ -26,6 +27,7 @@ import {
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useTransition } from "react";
 import { CopyButton } from "@/components/ui/copy-button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { uploadPublicImage } from "@/features/merch/actions/public-actions";
 import { getCheckoutProfile } from "@/features/account/actions/profile";
 import { getCheckoutPaymentOptions } from "@/features/payment-accounts/actions/payment-account-actions";
@@ -60,6 +62,8 @@ export default function Checkout() {
   const [orderCode, setOrderCode] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [isProofOpen, setIsProofOpen] = useState(false);
+  const [isQrisOpen, setIsQrisOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -725,11 +729,33 @@ export default function Checkout() {
               {selectedAccount ? (
                 <div className="flex items-center gap-4 rounded-xl border border-white/10 bg-[#1A1A1A] p-4">
                   {selectedAccount.type === "qris" && selectedAccount.qrisImgUrl ? (
-                    <img
-                      src={selectedAccount.qrisImgUrl}
-                      alt={selectedAccount.bankName}
-                      className="h-20 w-20 rounded-lg bg-white object-contain shrink-0"
-                    />
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setIsQrisOpen(true)}
+                        className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-white cursor-zoom-in"
+                      >
+                        <img
+                          src={selectedAccount.qrisImgUrl}
+                          alt={selectedAccount.bankName}
+                          className="h-20 w-20 object-contain"
+                        />
+                        <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                          <Maximize2 size={20} className="text-white" />
+                        </span>
+                      </button>
+
+                      <Dialog open={isQrisOpen} onOpenChange={setIsQrisOpen}>
+                        <DialogContent className="max-w-3xl border-white/10 bg-[#0D0E11] p-3 [&>button]:!text-black [&>button]:hover:!text-black/70">
+                          <DialogTitle className="sr-only">Tujuan Pembayaran</DialogTitle>
+                          <img
+                            src={selectedAccount.qrisImgUrl}
+                            alt={selectedAccount.bankName}
+                            className="mx-auto max-h-[80vh] w-full rounded-lg bg-white object-contain"
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    </>
                   ) : (
                     <div className="flex h-12 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white px-2">
                       <span className="text-[11px] font-black uppercase text-black text-center">
@@ -799,11 +825,35 @@ export default function Checkout() {
                   <FileText className="text-[#33A5D3]" size={18} /> Bukti Pembayaran
                 </h3>
                 {previewUrl ? (
-                  <img
-                    src={previewUrl}
-                    alt="Bukti pembayaran"
-                    className="max-h-52 w-full rounded-lg border border-white/10 bg-black/40 object-contain"
-                  />
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setIsProofOpen(true)}
+                      className="group relative block w-full overflow-hidden rounded-lg border border-white/10 bg-black/40 cursor-zoom-in"
+                    >
+                      <img
+                        src={previewUrl}
+                        alt="Bukti pembayaran"
+                        className="max-h-52 w-full object-contain"
+                      />
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                        <span className="rounded-full bg-black/80 px-4 py-2 text-xs font-bold tracking-widest text-white">
+                          BUKA UKURAN PENUH
+                        </span>
+                      </span>
+                    </button>
+
+                    <Dialog open={isProofOpen} onOpenChange={setIsProofOpen}>
+                      <DialogContent className="max-w-3xl border-white/10 bg-[#0D0E11] p-3">
+                        <DialogTitle className="sr-only">Bukti Pembayaran</DialogTitle>
+                        <img
+                          src={previewUrl}
+                          alt="Bukti pembayaran"
+                          className="mx-auto max-h-[80vh] w-full rounded-lg object-contain"
+                        />
+                      </DialogContent>
+                    </Dialog>
+                  </>
                 ) : (
                   <p className="text-sm text-gray-500 italic">Belum ada bukti.</p>
                 )}
