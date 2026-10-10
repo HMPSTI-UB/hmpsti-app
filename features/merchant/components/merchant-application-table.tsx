@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { id as localeID } from "date-fns/locale";
-import { Search, Check, X, Loader2, SlidersHorizontal } from "lucide-react";
+import { Search, Check, X, Loader2, SlidersHorizontal, Eye, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -44,8 +44,17 @@ import {
 import { TablePagination } from "@/components/ui/table-pagination";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { approveMerchant, rejectMerchant } from "../actions/admin-merchant-actions";
-import type { MerchantApplicationRow, MerchantStatus } from "../types";
+import {
+  approveMerchant,
+  rejectMerchant,
+  updateMerchant,
+  deleteMerchant,
+} from "../actions/admin-merchant-actions";
+import type {
+  MerchantApplicationInput,
+  MerchantApplicationRow,
+  MerchantStatus,
+} from "../types";
 
 const STATUS_META: Record<MerchantStatus, { label: string; className: string }> = {
   PENDING: { label: "Menunggu", className: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
@@ -71,6 +80,20 @@ export function MerchantApplicationTable({
   const [rejectTarget, setRejectTarget] = useState<MerchantApplicationRow | null>(null);
   const [reason, setReason] = useState("");
   const [isRejecting, startReject] = useTransition();
+
+  const [detailTarget, setDetailTarget] = useState<MerchantApplicationRow | null>(null);
+
+  const [editTarget, setEditTarget] = useState<MerchantApplicationRow | null>(null);
+  const [editForm, setEditForm] = useState<MerchantApplicationInput>({
+    storeName: "",
+    description: null,
+    phone: null,
+    address: null,
+  });
+  const [isEditing, startEdit] = useTransition();
+
+  const [deleteTarget, setDeleteTarget] = useState<MerchantApplicationRow | null>(null);
+  const [isDeleting, startDelete] = useTransition();
 
   const filtered = useMemo(() => {
     return applications.filter((a) => {
@@ -126,6 +149,48 @@ export function MerchantApplicationTable({
       toast.success(`Pengajuan "${rejectTarget.storeName}" ditolak.`);
       setRejectTarget(null);
       setReason("");
+      router.refresh();
+    });
+  };
+
+  const openEdit = (app: MerchantApplicationRow) => {
+    setEditForm({
+      storeName: app.storeName,
+      description: app.description,
+      phone: app.phone,
+      address: app.address,
+    });
+    setEditTarget(app);
+  };
+
+  const confirmEdit = () => {
+    if (!editTarget) return;
+    if (!editForm.storeName.trim()) {
+      toast.error("Nama toko wajib diisi.");
+      return;
+    }
+    startEdit(async () => {
+      const res = await updateMerchant(editTarget.id, editForm);
+      if (res?.error) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(`Data merchant "${editForm.storeName}" diperbarui.`);
+      setEditTarget(null);
+      router.refresh();
+    });
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    startDelete(async () => {
+      const res = await deleteMerchant(deleteTarget.id);
+      if (res?.error) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(`Merchant "${deleteTarget.storeName}" dihapus.`);
+      setDeleteTarget(null);
       router.refresh();
     });
   };
@@ -224,30 +289,58 @@ export function MerchantApplicationTable({
                     {format(new Date(app.createdAt), "d MMM yyyy", { locale: localeID })}
                   </TableCell>
                   <TableCell>
-                    {app.status === "PENDING" ? (
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          size="sm"
-                          onClick={() => setApproveTarget(app)}
-                          className="gap-1.5 bg-emerald-500 font-bold text-black hover:bg-emerald-400"
-                        >
-                          <Check className="h-4 w-4" /> Setujui
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setReason("");
-                            setRejectTarget(app);
-                          }}
-                          className="gap-1.5 border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300"
-                        >
-                          <X className="h-4 w-4" /> Tolak
-                        </Button>
-                      </div>
-                    ) : (
-                      <p className="text-right text-xs text-gray-600">—</p>
-                    )}
+                    <div className="flex items-center justify-end gap-1">
+                      {app.status === "PENDING" && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => setApproveTarget(app)}
+                            className="gap-1.5 bg-emerald-500 font-bold text-black hover:bg-emerald-400"
+                          >
+                            <Check className="h-4 w-4" /> Setujui
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setReason("");
+                              setRejectTarget(app);
+                            }}
+                            className="gap-1.5 border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                          >
+                            <X className="h-4 w-4" /> Tolak
+                          </Button>
+                          <span className="mx-1 h-5 w-px bg-white/10" />
+                        </>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDetailTarget(app)}
+                        className="h-8 w-8 text-gray-300 hover:bg-white/10 hover:text-white"
+                        title="Lihat Detail"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEdit(app)}
+                        className="h-8 w-8 text-[#33A5D3] hover:bg-[#33A5D3]/10 hover:text-[#33A5D3]"
+                        title="Edit Merchant"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeleteTarget(app)}
+                        className="h-8 w-8 text-red-400 hover:bg-red-400/10 hover:text-red-300"
+                        title="Hapus Merchant"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -381,6 +474,184 @@ export function MerchantApplicationTable({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Detail dialog (read) */}
+      <Dialog open={!!detailTarget} onOpenChange={(open) => !open && setDetailTarget(null)}>
+        <DialogContent className="border-white/10 bg-[#111111] text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Detail Merchant</DialogTitle>
+          </DialogHeader>
+          {detailTarget && (
+            <div className="space-y-4 py-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">Status</span>
+                <Badge className={cn("border", STATUS_META[detailTarget.status].className)}>
+                  {STATUS_META[detailTarget.status].label}
+                </Badge>
+              </div>
+              <DetailRow label="Nama Toko" value={detailTarget.storeName} />
+              <DetailRow label="Deskripsi" value={detailTarget.description} />
+              <DetailRow label="Pemilik" value={detailTarget.userName} />
+              <DetailRow label="Email" value={detailTarget.userEmail} />
+              <DetailRow label="Kontak" value={detailTarget.phone} />
+              <DetailRow label="Alamat" value={detailTarget.address} />
+              <DetailRow
+                label="Diajukan"
+                value={format(new Date(detailTarget.createdAt), "d MMM yyyy HH:mm", { locale: localeID })}
+              />
+              {detailTarget.reviewedAt && (
+                <DetailRow
+                  label="Ditinjau"
+                  value={format(new Date(detailTarget.reviewedAt), "d MMM yyyy HH:mm", { locale: localeID })}
+                />
+              )}
+              {detailTarget.status === "REJECTED" && detailTarget.rejectionReason && (
+                <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+                  <p className="mb-1 text-xs font-semibold text-red-400">Alasan Ditolak</p>
+                  <p className="text-gray-200">{detailTarget.rejectionReason}</p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setDetailTarget(null)}
+              className="text-gray-400 hover:bg-white/5 hover:text-white"
+            >
+              Tutup
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
+        <DialogContent className="border-white/10 bg-[#111111] text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Merchant</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-gray-300">
+                Nama Toko <span className="text-red-400">*</span>
+              </Label>
+              <Input
+                value={editForm.storeName}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, storeName: e.target.value }))
+                }
+                placeholder="Nama toko"
+                className="border-white/10 bg-white/5 text-white focus-visible:ring-[#33A5D3]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-gray-300">Deskripsi</Label>
+              <textarea
+                value={editForm.description ?? ""}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, description: e.target.value }))
+                }
+                rows={3}
+                placeholder="Deskripsi singkat toko..."
+                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-[#33A5D3]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-gray-300">Kontak</Label>
+              <Input
+                value={editForm.phone ?? ""}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, phone: e.target.value }))
+                }
+                placeholder="Nomor telepon / WhatsApp"
+                className="border-white/10 bg-white/5 text-white focus-visible:ring-[#33A5D3]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-gray-300">Alamat</Label>
+              <textarea
+                value={editForm.address ?? ""}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, address: e.target.value }))
+                }
+                rows={2}
+                placeholder="Alamat toko..."
+                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-[#33A5D3]"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setEditTarget(null)}
+              disabled={isEditing}
+              className="text-gray-400 hover:bg-white/5 hover:text-white"
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={confirmEdit}
+              disabled={isEditing}
+              className="gap-2 bg-[#33A5D3] font-bold text-black hover:bg-[#33A5D3]/90"
+            >
+              {isEditing && <Loader2 className="h-4 w-4 animate-spin" />}
+              Simpan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent className="border-white/10 bg-[#111111] text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus merchant ini?</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
+              <span className="text-white">{deleteTarget?.storeName}</span> beserta
+              seluruh produk, rekening, dan data tokonya akan dihapus permanen.
+              Akun pemilik dikembalikan menjadi user biasa. Tindakan ini tidak bisa
+              dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={isDeleting}
+              className="border-white/10 bg-transparent text-gray-300 hover:bg-white/5 hover:text-white"
+            >
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete();
+              }}
+              disabled={isDeleting}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Hapus Permanen"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null | undefined;
+}) {
+  return (
+    <div className="flex justify-between gap-4">
+      <span className="shrink-0 text-gray-400">{label}</span>
+      <span className="text-right text-gray-100">{value || "-"}</span>
     </div>
   );
 }
